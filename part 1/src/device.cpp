@@ -42,7 +42,7 @@ Device::Device(dev_ID id_, const std::string & name_, const std::string & mac_)
     memset(errbuf, 0, sizeof(errbuf));
     pcap_t * tmp_pcap = pcap_open_live(name.c_str(), 65536, 0, 0, errbuf);
     if (!pcap) {
-        dbg_printf("[Error] [sendFrame] %s", errbuf);
+        throw "pcap_open_live failed!";
     }
     this->pcap = tmp_pcap;
     t = std::thread(pcap_loop, pcap, -1, my_pcap_callback, (u_char *)NULL);
@@ -50,7 +50,6 @@ Device::Device(dev_ID id_, const std::string & name_, const std::string & mac_)
 
 Device::~Device() {
     t.join();
-    delete pcap;
     memset(errbuf, 0, PCAP_ERRBUF_SIZE);
 }
 
@@ -70,8 +69,9 @@ dev_ID DeviceManager::addDevice(const std::string & dev_name) {
             }
         }
         char mac_[30];
-        while (get_mac(mac_, 30, dev_name) < 0) {
-            dbg_printf("[Error] [addDevice] Get mac address failed. \n");
+        if (get_mac(mac_, 30, dev_name) < 0) {
+            dbg_printf("[Error] [addDevice] GetMac failed! \n");
+            return -1;
         }
         dbg_printf("[Info] Mac of device %s is %s \n", dev_name.c_str(), mac_);
         const std::string mac(mac_);
@@ -82,6 +82,7 @@ dev_ID DeviceManager::addDevice(const std::string & dev_name) {
         dbg_printf("[Error] [addDevice] %s\n", err_msg);
         return -1;
     }
+    return 0;
 }
 
 dev_ID DeviceManager::findDevice(const std::string & dev_name) {

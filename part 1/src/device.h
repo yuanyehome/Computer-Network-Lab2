@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <cstring>
 #include <thread>
+#include <assert.h>
 #include "DEBUG.h"
 
 
