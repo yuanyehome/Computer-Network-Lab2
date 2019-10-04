@@ -7,37 +7,45 @@
 #include <net/if_arp.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
+#include <net/ethernet.h>
 #include <cstring>
 #include <thread>
 #include <assert.h>
 #include "DEBUG.h"
 
-
 typedef int dev_ID;
-typedef int (*frameReceiveCallback)(const void*, int);
-void my_pcap_callback(u_char* argument,const struct pcap_pkthdr* packet_header,const u_char* packet_content);
-int myOnReceived(const void * buf, int len);
+typedef int (*frameReceiveCallback)(const void *, int);
+void my_pcap_callback(u_char *argument, const struct pcap_pkthdr *packet_header, const u_char *packet_content);
+int myOnReceived(const void *buf, int len);
 
-struct Device {
+struct callback_args
+{
+    dev_ID id;
+    callback_args(dev_ID id_) : id(id_) {}
+};
+
+struct Device
+{
     dev_ID id;
     std::string name;
-    const std::string & mac;
-    pcap_t * pcap;
+    const std::string &mac;
+    pcap_t *pcap;
     char errbuf[PCAP_ERRBUF_SIZE];
     std::thread t;
     static frameReceiveCallback onReceived;
+    callback_args *args;
 
-    Device(dev_ID id_, const std::string & name_, const std::string & mac_);
+    Device(dev_ID id_, const std::string &name_, const std::string &mac_);
     ~Device();
-    int sendFrame(const void* buf, int len, int ethtype, const void* destmac);
+    int sendFrame(const void *buf, int len, int ethtype, const void *destmac);
 };
 
-
-struct DeviceManager {
+struct DeviceManager
+{
     std::vector<Device *> device_list;
 
-    dev_ID addDevice(const std::string & dev_name);
-    dev_ID findDevice(const std::string & dev_name);
+    dev_ID addDevice(const std::string &dev_name);
+    dev_ID findDevice(const std::string &dev_name);
     /**
      * @brief Register a callback function to be called each time an Ethernet II 
      * frame was received.
