@@ -126,6 +126,14 @@ void my_pcap_callback(u_char *argument, const struct pcap_pkthdr *packet_header,
     }
     size_t size = packet_header->caplen - 18;
     u_char *content = new u_char[size];
+    ether_header *header = new ether_header();
+    memcpy(header, packet_content, 14);
+    header->ether_type = ntohs(header->ether_type);
+    dbg_printf("[Dest: %2x %2x %2x %2x %2x %2x]\n[Src: %2x %2x %2x %2x %2x %2x]\n[Ethtype %04x]\n",
+               header->ether_dhost[0], header->ether_dhost[1], header->ether_dhost[2], header->ether_dhost[3],
+               header->ether_dhost[4], header->ether_dhost[5], header->ether_shost[0], header->ether_shost[1],
+               header->ether_shost[2], header->ether_shost[3], header->ether_shost[4], header->ether_shost[5],
+               header->ether_type);
     memcpy(content, packet_content + 14, size);
     // Device::onReceived(content, size);
 }

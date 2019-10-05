@@ -26,9 +26,18 @@ int Device::sendFrame(const void *buf, int len, int ethtype, const void *destmac
 {
     size_t size = len + 2 * ETHER_ADDR_LEN + ETHER_TYPE_LEN + ETHER_CRC_LEN;
     u_char *frame = new u_char[size];
-    memcpy(frame, destmac, ETHER_ADDR_LEN);
-    memcpy(frame + ETHER_ADDR_LEN, mac.c_str(), ETHER_ADDR_LEN);
-    memcpy(frame + 2 * ETHER_ADDR_LEN, (void *)(&len), ETHER_TYPE_LEN);
+    ether_header *header = new ether_header();
+    for (int i = 0; i < ETHER_ADDR_LEN; i++)
+    {
+        header->ether_dhost[i] = *((u_int8_t *)(destmac) + i);
+        header->ether_shost[i] = (u_int8_t)this->mac[i];
+    }
+    header->ether_type = htons(ethtype);
+
+    dbg_printf("%ld\n", sizeof(*header));
+    assert(sizeof(*header) == 2 * ETHER_ADDR_LEN + ETHER_TYPE_LEN);
+
+    memcpy(frame, header, 2 * ETHER_ADDR_LEN + ETHER_TYPE_LEN);
     memcpy(frame + 2 * ETHER_ADDR_LEN + ETHER_TYPE_LEN, buf, len);
     for (int i = size - ETHER_TYPE_LEN; i < size; ++i)
     {

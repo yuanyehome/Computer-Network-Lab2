@@ -28,7 +28,7 @@ struct Device
 {
     dev_ID id;
     std::string name;
-    const std::string &mac;
+    const std::string mac;
     pcap_t *pcap;
     char errbuf[PCAP_ERRBUF_SIZE];
     std::thread t;
