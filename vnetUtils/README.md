@@ -122,7 +122,7 @@ In `examples/` we have developed two scripts, `makeVNet` and `removeVNet` for yo
     Input:
 
     ```
-    
+    myvnet
     4
     1 2 10.100.1
     2 3 10.100.2
