@@ -14,6 +14,9 @@
 #include "device.h"
 #endif
 
+#include <ctime>
+#include <unistd.h>
+
 int main()
 {
     char errBuf[PCAP_ERRBUF_SIZE] = {0};
@@ -39,6 +42,21 @@ int main()
         }
         dbg_printf("\n");
         head = head->next;
+    }
+
+    while (1)
+    {
+        for (auto & device : manager.device_list) {
+            dbg_printf("[name: %s] [id: %d]\n", device->name.c_str(), device->id);
+            u_char * content = new u_char[100];
+            memset(content, 15, 100);
+            u_char * dest_mac = new u_char[6];
+            memset(dest_mac, 255, 6);
+            device->sendFrame(content, 100, 0x0800, dest_mac);
+            delete[] content;
+            delete[] dest_mac;
+        }
+        sleep(5);
     }
 
     // if (manager.addDevice(std::string("lo")) < 0)

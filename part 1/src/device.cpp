@@ -135,5 +135,5 @@ void my_pcap_callback(u_char *argument, const struct pcap_pkthdr *packet_header,
                header->ether_shost[2], header->ether_shost[3], header->ether_shost[4], header->ether_shost[5],
                header->ether_type);
     memcpy(content, packet_content + 14, size);
-    // Device::onReceived(content, size);
+    Device::onReceived(content, size);
 }

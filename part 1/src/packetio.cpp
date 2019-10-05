@@ -11,6 +11,16 @@
 #endif
 typedef int (*frameReceiveCallback)(const void *, int);
 
+
+void strToMac(const std::string & mac, u_char * buf)
+{
+    int tmp[6];
+    sscanf(mac.c_str(), "%2x:%2x:%2x:%2x:%2x:%2x", tmp, tmp + 1, tmp + 2, tmp + 3, tmp + 4, tmp + 5);
+    for (int i = 0; i < 6; ++i)
+    {
+        buf[i] = (u_char)tmp[i];
+    }
+}
 /** 
  * @brief Encapsulate some data into an Ethernet II frame and send it.
  *
@@ -24,17 +34,20 @@ typedef int (*frameReceiveCallback)(const void *, int);
  */
 int Device::sendFrame(const void *buf, int len, int ethtype, const void *destmac)
 {
+    dbg_printf("\n[Function: sendFrame]***************\n");
     size_t size = len + 2 * ETHER_ADDR_LEN + ETHER_TYPE_LEN + ETHER_CRC_LEN;
     u_char *frame = new u_char[size];
     ether_header *header = new ether_header();
+    // dbg_printf("[DEBUG] %s\n", this->mac.c_str());
+    u_char * tmp = new u_char[6];
+    strToMac(this->mac, tmp);
     for (int i = 0; i < ETHER_ADDR_LEN; i++)
     {
         header->ether_dhost[i] = *((u_int8_t *)(destmac) + i);
-        header->ether_shost[i] = (u_int8_t)this->mac[i];
+        header->ether_shost[i] = (u_int8_t)tmp[i];
+        // dbg_printf("[DEBUG] [sendFrame] [Mac %02x]\n", tmp[i]);
     }
     header->ether_type = htons(ethtype);
-
-    dbg_printf("%ld\n", sizeof(*header));
     assert(sizeof(*header) == 2 * ETHER_ADDR_LEN + ETHER_TYPE_LEN);
 
     memcpy(frame, header, 2 * ETHER_ADDR_LEN + ETHER_TYPE_LEN);
@@ -45,12 +58,14 @@ int Device::sendFrame(const void *buf, int len, int ethtype, const void *destmac
         // checksum, not implement;
     }
     int stat = pcap_sendpacket(pcap, (u_char *)frame, size);
-    delete frame;
+    delete[] tmp;
+    delete[] frame;
     if (stat < 0)
     {
-        dbg_printf("[Error] [sendFrame] [pcap_sendpacket]");
+        dbg_printf("[Error] [sendFrame] [pcap_sendpacket]\n");
         return -1;
     }
+    dbg_printf("[Info] [sendFrame] send  succeeded!\n");
     return 0;
 }
 
@@ -67,6 +82,7 @@ int Device::sendFrame(const void *buf, int len, int ethtype, const void *destmac
 
 int myOnReceived(const void *buf, int len)
 {
+    dbg_printf("\n[Function: myOnReceived]***************\n");
     dbg_printf("[Info] [Payload]: ");
     for (int i = 0; i < len; ++i)
     {
@@ -78,6 +94,7 @@ int myOnReceived(const void *buf, int len)
 
 int DeviceManager::setFrameReceiveCallback(frameReceiveCallback callback)
 {
+    dbg_printf("\n[Function: setFrameReceiveCallback]***************\n");
     try
     {
         Device::onReceived = callback;

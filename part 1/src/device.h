@@ -17,6 +17,7 @@ typedef int dev_ID;
 typedef int (*frameReceiveCallback)(const void *, int);
 void my_pcap_callback(u_char *argument, const struct pcap_pkthdr *packet_header, const u_char *packet_content);
 int myOnReceived(const void *buf, int len);
+void strToMac(std::string & mac, void * buf);
 
 struct callback_args
 {
