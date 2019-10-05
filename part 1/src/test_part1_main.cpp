@@ -17,6 +17,14 @@
 #include <ctime>
 #include <unistd.h>
 
+
+/*
+Description of this file:
+1) find all devices and try to add them to device_list;
+2) each device will send a packet to "ff:ff:ff:ff:ff:ff" every 5 seconds;
+3) During Device initianlizing, it will create a thread using "pcap_loop" to receive packets;
+*/
+
 int main()
 {
     char errBuf[PCAP_ERRBUF_SIZE] = {0};

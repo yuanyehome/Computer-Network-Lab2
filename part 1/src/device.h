@@ -19,6 +19,12 @@ void my_pcap_callback(u_char *argument, const struct pcap_pkthdr *packet_header,
 int myOnReceived(const void *buf, int len);
 void strToMac(std::string & mac, void * buf);
 
+/*
+Description of this file:
+1) struct Device: send and manage a thread of pcap_loop;
+2) struct DeviceManager: manage all the devices;
+*/
+
 struct callback_args
 {
     dev_ID id;
@@ -38,6 +44,13 @@ struct Device
 
     Device(dev_ID id_, const std::string &name_, const std::string &mac_);
     ~Device();
+    /*
+     * @send a frame to destmac
+     * @param buf buffer of payload
+     * @param len length of payload
+     * @param ethtype type of eth, don't forget the byte order
+     * @param destmac destination
+    */
     int sendFrame(const void *buf, int len, int ethtype, const void *destmac);
 };
 
