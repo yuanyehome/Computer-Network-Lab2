@@ -10,10 +10,13 @@
 #include <net/if_arp.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
+#include <net/ethernet.h>
 #include <cstring>
-#include "device.h"
+#include <thread>
+#include <assert.h>
+#include "DEBUG.h"
 #endif
-
+#include "device.h"
 #include <ctime>
 #include <unistd.h>
 

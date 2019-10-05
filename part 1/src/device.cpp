@@ -10,8 +10,11 @@
 #include <net/if_arp.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
+#include <net/ethernet.h>
 #include <cstring>
 #include <thread>
+#include <assert.h>
+#include "DEBUG.h"
 #include "device.h"
 #endif
 typedef int (*frameReceiveCallback)(const void *, int);
