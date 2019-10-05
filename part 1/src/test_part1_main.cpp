@@ -41,5 +41,15 @@ int main()
         head = head->next;
     }
 
+    // if (manager.addDevice(std::string("lo")) < 0)
+    // {
+    //     dbg_printf("[Info] [Name: %s] add failed!\n", "lo");
+    // }
+    // else
+    // {
+    //     dbg_printf("[Info] [Name: %s] add succeeded!\n", "lo");
+    // }
+    // dbg_printf("\n");
+
     return 0;
 }
