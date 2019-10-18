@@ -146,7 +146,7 @@ In `examples/` we have developed two scripts, `makeVNet` and `removeVNet` for yo
 
     ![Example Network](exp.png)
 
-    You may find this topology useful when describing a typical client-server model with the client behind a router: `ns1` -> client, `ns2` -> router, `ns3` -> network between router and server, `ns4` -> server, `ns0` -> Remaining part of the Internet. The input has configured routing properly to match the abstraction.
+    You may find this topology useful when describing a typical client-server model with the client behind a router: `ns1` -> client, `ns2` -> router, `ns3` -> network between router and1 server, `ns4` -> server, `ns0` -> Remaining part of the Internet. The input has configured routing properly to match the abstraction.
 
 Note: It is guranteed that the scripts will provide expected output ONLY when:
 
