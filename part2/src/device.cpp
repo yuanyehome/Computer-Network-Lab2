@@ -1,24 +1,5 @@
-#ifndef DEVICE_H
-#define DEVICE_H
-
-#include <pcap/pcap.h>
-#include <iostream>
-#include <cstdio>
-#include <string>
-#include <vector>
-#include <net/if.h>
-#include <net/if_arp.h>
-#include <sys/ioctl.h>
-#include <netinet/in.h>
-#include <net/ethernet.h>
-#include <cstring>
-#include <thread>
-#include <assert.h>
-#include <ifaddrs.h>
-#include <net/if_dl.h>
-#include "DEBUG.h"
 #include "device.h"
-#endif
+
 typedef int (*frameReceiveCallback)(const void *, int);
 
 int get_mac(char *mac, int len_limit, const std::string &name)

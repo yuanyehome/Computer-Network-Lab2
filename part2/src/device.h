@@ -1,3 +1,6 @@
+#ifndef DEVICE_H_
+#define DEVICE_H_
+
 #include <pcap/pcap.h>
 #include <iostream>
 #include <cstdio>
@@ -11,11 +14,10 @@
 #include <cstring>
 #include <thread>
 #include <assert.h>
-
 #include <arpa/inet.h>
 #include <ifaddrs.h>
 #include <unistd.h>
-
+#include <net/if_dl.h>
 #include "DEBUG.h"
 
 typedef int dev_ID;
@@ -76,3 +78,5 @@ struct DeviceManager
     int setFrameReceiveCallback(frameReceiveCallback callback);
     ~DeviceManager();
 };
+
+#endif
