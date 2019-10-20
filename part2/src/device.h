@@ -11,13 +11,18 @@
 #include <cstring>
 #include <thread>
 #include <assert.h>
+
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <unistd.h>
+
 #include "DEBUG.h"
 
 typedef int dev_ID;
 typedef int (*frameReceiveCallback)(const void *, int);
 void my_pcap_callback(u_char *argument, const struct pcap_pkthdr *packet_header, const u_char *packet_content);
 int myOnReceived(const void *buf, int len);
-void strToMac(std::string & mac, void * buf);
+void strToMac(std::string &mac, void *buf);
 
 /*
 Description of this file:

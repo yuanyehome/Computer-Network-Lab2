@@ -14,6 +14,8 @@
 #include <cstring>
 #include <thread>
 #include <assert.h>
+#include <ifaddrs.h>
+#include <net/if_dl.h>
 #include "DEBUG.h"
 #include "device.h"
 #endif
@@ -21,6 +23,26 @@ typedef int (*frameReceiveCallback)(const void *, int);
 
 int get_mac(char *mac, int len_limit, const std::string &name)
 {
+#ifdef __APPLE__
+    ifaddrs *iflist;
+    int found = -1;
+    if (getifaddrs(&iflist) == 0)
+    {
+        for (ifaddrs *cur = iflist; cur; cur = cur->ifa_next)
+        {
+            if ((cur->ifa_addr->sa_family == AF_LINK) &&
+                (strcmp(cur->ifa_name, name.c_str()) == 0) && cur->ifa_addr)
+            {
+                auto sdl = reinterpret_cast<sockaddr_dl *>(cur->ifa_addr);
+                memcpy(mac, LLADDR(sdl), sdl->sdl_alen);
+                found = 1;
+                break;
+            }
+        }
+        freeifaddrs(iflist);
+    }
+    return found;
+#else
     struct ifreq ifreq;
     int sock;
 
@@ -40,6 +62,7 @@ int get_mac(char *mac, int len_limit, const std::string &name)
                     (unsigned char)ifreq.ifr_hwaddr.sa_data[1], (unsigned char)ifreq.ifr_hwaddr.sa_data[2],
                     (unsigned char)ifreq.ifr_hwaddr.sa_data[3], (unsigned char)ifreq.ifr_hwaddr.sa_data[4],
                     (unsigned char)ifreq.ifr_hwaddr.sa_data[5]);
+#endif
 }
 
 Device::Device(dev_ID id_, const std::string &name_, const std::string &mac_)
