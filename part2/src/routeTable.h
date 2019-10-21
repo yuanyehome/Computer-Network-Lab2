@@ -1,3 +1,5 @@
+#ifndef ROUTETABLE_H_
+#define ROUTETABLE_H_
 #include "DEBUG.h"
 #include "arp.h"
 #include "device.h"
@@ -26,3 +28,4 @@ struct router {
 };
 router router_mgr;
 }
+#endif

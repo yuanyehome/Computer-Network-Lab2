@@ -2,12 +2,26 @@
 #define IP_H_
 #include "DEBUG.h"
 
-struct IP {
+namespace IP {
+IPPacketReceiveCallback IPCallback;
+int setIPPacketReceiveCallback(IPPacketReceiveCallback callback);
+int setRoutingTable(const struct in_addr dest, const struct in_addr mask,
+    const void* nextHopMAC, const char* device);
+struct packet {
     ip header;
-    IPPacketReceiveCallback IPCallback;
-    int setIPPacketReceiveCallback(IPPacketReceiveCallback callback);
-    int setRoutingTable(const struct in_addr dest, const struct in_addr mask,
-        const void* nextHopMAC, const char* device);
+    const u_char* payload;
+    packet()
+    {
+        header.ip_v = 4;
+        header.ip_hl = 5;
+        header.ip_tos = 0;
+        header.ip_id = 0;
+        header.ip_off = IP_DF;
+        header.ip_ttl = 16;
+    }
+    void change_to_net_byte_order();
+    void change_back();
+};
 };
 
 struct compare_ip {
@@ -18,8 +32,8 @@ bool in_same_subnet(ip_addr ip1, ip_addr ip2, ip_addr mask);
 
 /*
  * Internet Datagram Header
- *  0                   1                   2                   3
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ *  0               1               2               3              |
+ *  0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7|
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |Version|  IHL  |Type of Service|          Total Length         |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
