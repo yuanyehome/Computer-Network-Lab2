@@ -49,6 +49,26 @@ int get_mac(char *mac, int len_limit, const std::string &name)
 Device::Device(dev_ID id_, const std::string &name_, const std::string &mac_)
     : name(name_), id(id_), mac(mac_)
 {
+    ifaddrs *if_link;
+    if (getifaddrs(&if_link) < 0)
+    {
+        throw "getifaddr failed!";
+        return;
+    }
+    ifaddrs *tmp;
+    while (tmp)
+    {
+        if (strcmp(tmp->ifa_name, name_.c_str()) == 0)
+        {
+            auto tmp_tmp = (sockaddr_in *)tmp->ifa_addr;
+            dev_ip = tmp_tmp->sin_addr;
+            tmp_tmp = (sockaddr_in *)tmp->ifa_netmask;
+            subnetMask = tmp_tmp->sin_addr;
+            dbg_printf("[INFO] The IP address of %s is %s, subnetMask is %s\n", name_.c_str(), inet_ntoa(dev_ip), inet_ntoa(subnetMask));
+            break;
+        }
+        tmp = tmp->ifa_next;
+    }
     memset(errbuf, 0, sizeof(errbuf));
     pcap_t *tmp_pcap = pcap_open_live(name.c_str(), 65536, 0, 0, errbuf);
     if (!tmp_pcap)
