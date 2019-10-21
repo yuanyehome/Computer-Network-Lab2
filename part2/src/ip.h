@@ -10,6 +10,10 @@ struct IP {
         const void* nextHopMAC, const char* device);
 };
 
+struct compare_ip {
+    bool operator()(const ip_addr ip1, const ip_addr ip2) const;
+}
+
 /*
  * Internet Datagram Header
  *  0                   1                   2                   3
