@@ -1,31 +1,29 @@
 #ifndef DEVICE_H
 #define DEVICE_H
 
-#include <pcap/pcap.h>
-#include <iostream>
-#include <cstdio>
-#include <string>
-#include <vector>
-#include <net/if.h>
-#include <net/if_arp.h>
-#include <sys/ioctl.h>
-#include <netinet/in.h>
-#include <net/ethernet.h>
-#include <cstring>
-#include <thread>
-#include <assert.h>
 #include "DEBUG.h"
 #include "device.h"
+#include <assert.h>
+#include <cstdio>
+#include <cstring>
+#include <iostream>
+#include <net/ethernet.h>
+#include <net/if.h>
+#include <net/if_arp.h>
+#include <netinet/in.h>
+#include <pcap/pcap.h>
+#include <string>
+#include <sys/ioctl.h>
+#include <thread>
+#include <vector>
 #endif
-typedef int (*frameReceiveCallback)(const void *, int);
+typedef int (*frameReceiveCallback)(const void*, int);
 
-
-void strToMac(const std::string & mac, u_char * buf)
+void strToMac(const std::string& mac, u_char* buf)
 {
     int tmp[6];
     sscanf(mac.c_str(), "%2x:%2x:%2x:%2x:%2x:%2x", tmp, tmp + 1, tmp + 2, tmp + 3, tmp + 4, tmp + 5);
-    for (int i = 0; i < 6; ++i)
-    {
+    for (int i = 0; i < 6; ++i) {
         buf[i] = (u_char)tmp[i];
     }
 }
@@ -40,18 +38,17 @@ void strToMac(const std::string & mac, u_char * buf)
  * @return 0 on success, -1 on error.
  * @see addDevice
  */
-int Device::sendFrame(const void *buf, int len, int ethtype, const void *destmac)
+int Device::sendFrame(const void* buf, int len, int ethtype, const void* destmac)
 {
     dbg_printf("\n[Function: sendFrame]***************\n");
     size_t size = len + 2 * ETHER_ADDR_LEN + ETHER_TYPE_LEN + ETHER_CRC_LEN;
-    u_char *frame = new u_char[size];
-    ether_header *header = new ether_header();
+    u_char* frame = new u_char[size];
+    ether_header* header = new ether_header();
     // dbg_printf("[DEBUG] %s\n", this->mac.c_str());
-    u_char * tmp = new u_char[6];
+    u_char* tmp = new u_char[6];
     strToMac(this->mac, tmp);
-    for (int i = 0; i < ETHER_ADDR_LEN; i++)
-    {
-        header->ether_dhost[i] = *((u_int8_t *)(destmac) + i);
+    for (int i = 0; i < ETHER_ADDR_LEN; i++) {
+        header->ether_dhost[i] = *((u_int8_t*)(destmac) + i);
         header->ether_shost[i] = (u_int8_t)tmp[i];
         // dbg_printf("[DEBUG] [sendFrame] [Mac %02x]\n", tmp[i]);
     }
@@ -60,16 +57,14 @@ int Device::sendFrame(const void *buf, int len, int ethtype, const void *destmac
 
     memcpy(frame, header, 2 * ETHER_ADDR_LEN + ETHER_TYPE_LEN);
     memcpy(frame + 2 * ETHER_ADDR_LEN + ETHER_TYPE_LEN, buf, len);
-    for (int i = size - ETHER_TYPE_LEN; i < size; ++i)
-    {
+    for (int i = size - ETHER_TYPE_LEN; i < size; ++i) {
         frame[i] = 0;
         // checksum, not implement;
     }
-    int stat = pcap_sendpacket(pcap, (u_char *)frame, size);
+    int stat = pcap_sendpacket(pcap, (u_char*)frame, size);
     delete[] tmp;
     delete[] frame;
-    if (stat < 0)
-    {
+    if (stat < 0) {
         dbg_printf("[Error] [sendFrame] [pcap_sendpacket]\n");
         return -1;
     }
@@ -88,13 +83,12 @@ int Device::sendFrame(const void *buf, int len, int ethtype, const void *destmac
  * @see addDevice
  */
 
-int myOnReceived(const void *buf, int len)
+int myOnReceived(const void* buf, int len)
 {
     dbg_printf("\n[Function: myOnReceived]***************\n");
     dbg_printf("[Info] [Payload]: ");
-    for (int i = 0; i < len; ++i)
-    {
-        dbg_printf("%02x ", *(u_int8_t *)((u_char *)buf + i));
+    for (int i = 0; i < len; ++i) {
+        dbg_printf("%02x ", *(u_int8_t*)((u_char*)buf + i));
     }
     dbg_printf("\n");
     return 0;
@@ -103,12 +97,9 @@ int myOnReceived(const void *buf, int len)
 int DeviceManager::setFrameReceiveCallback(frameReceiveCallback callback)
 {
     dbg_printf("\n[Function: setFrameReceiveCallback]***************\n");
-    try
-    {
+    try {
         Device::onReceived = callback;
-    }
-    catch (const char *err_msg)
-    {
+    } catch (const char* err_msg) {
         dbg_printf("[Error] [setFrameReceiveCallback] %s\n", err_msg);
         return -1;
     }

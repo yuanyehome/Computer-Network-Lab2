@@ -1,0 +1,5 @@
+*.zip
+*.pptx
+.vscode
+*.o
+**/*.o
