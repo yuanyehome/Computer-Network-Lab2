@@ -58,7 +58,9 @@ int Device::sendFrame(const void* buf, int len, int ethtype,
     assert(sizeof(*header) == 2 * ETHER_ADDR_LEN + ETHER_TYPE_LEN);
 
     memcpy(frame, header, 2 * ETHER_ADDR_LEN + ETHER_TYPE_LEN);
-    memcpy(frame + 2 * ETHER_ADDR_LEN + ETHER_TYPE_LEN, buf, len);
+    if (len) {
+        memcpy(frame + 2 * ETHER_ADDR_LEN + ETHER_TYPE_LEN, buf, len);
+    }
     for (int i = size - ETHER_TYPE_LEN; i < size; ++i) {
         frame[i] = 0;
         // checksum, not implement;
