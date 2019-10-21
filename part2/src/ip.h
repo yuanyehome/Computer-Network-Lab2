@@ -14,6 +14,8 @@ struct compare_ip {
     bool operator()(const ip_addr ip1, const ip_addr ip2) const;
 };
 
+bool in_same_subnet(ip_addr ip1, ip_addr ip2, ip_addr mask);
+
 /*
  * Internet Datagram Header
  *  0                   1                   2                   3

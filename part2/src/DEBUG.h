@@ -12,6 +12,7 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <pcap/pcap.h>
+#include <set>
 #include <string>
 #include <sys/ioctl.h>
 #include <thread>
@@ -29,3 +30,4 @@ typedef in_addr ip_addr;
 typedef int (*IPPacketReceiveCallback)(const void* buf, int len);
 typedef int dev_ID;
 typedef int (*frameReceiveCallback)(const void*, int);
+typedef int distance;

@@ -1,6 +1,12 @@
 #include "ip.h"
 #include "arp.h"
 #include "device.h"
+#include "routeTable.h"
+
+bool in_same_subnet(ip_addr ip1, ip_addr ip2, ip_addr mask)
+{
+    return ((ip1.s_addr & mask.s_addr) == (ip2.s_addr & mask.s_addr));
+}
 
 int sendIPPacket(DeviceManager mgr,
     const struct in_addr src,
@@ -16,7 +22,15 @@ int sendIPPacket(DeviceManager mgr,
     }
     auto srcMac = dev_ptr->mac;
     std::string dstMAC;
-    dstMAC = arp::findMAC(dev_ptr, dest);
+    if (in_same_subnet(src, dest, dev_ptr->subnetMask)) {
+        dstMAC = arp::findMAC(dev_ptr, dest);
+    } else {
+        try {
+            dstMAC = Router::router_mgr.get_nexthop_mac(dest);
+        } catch (const char* err_msg) {
+            dbg_printf("[ERROR] %s [IP]=%s", err_msg, inet_ntoa(dest));
+        }
+    }
     return 0;
 }
 
