@@ -22,7 +22,7 @@ typedef int (*frameReceiveCallback)(const void*, int);
 void strToMac(const std::string& mac, u_char* buf)
 {
     int tmp[6];
-    sscanf(mac.c_str(), "%2x:%2x:%2x:%2x:%2x:%2x", tmp, tmp + 1, tmp + 2, tmp + 3,
+    sscanf(mac.c_str(), "%X:%X:%X:%X:%X:%X", tmp, tmp + 1, tmp + 2, tmp + 3,
         tmp + 4, tmp + 5);
     for (int i = 0; i < 6; ++i) {
         buf[i] = (u_char)tmp[i];
@@ -52,7 +52,7 @@ int Device::sendFrame(const void* buf, int len, int ethtype,
     for (int i = 0; i < ETHER_ADDR_LEN; i++) {
         header->ether_dhost[i] = *((u_int8_t*)(destmac) + i);
         header->ether_shost[i] = (u_int8_t)tmp[i];
-        // dbg_printf("[DEBUG] [sendFrame] [Mac %02x]\n", tmp[i]);
+        // dbg_printf("[DEBUG] [sendFrame] [Mac %0X]\n", tmp[i]);
     }
     header->ether_type = htons(ethtype);
     assert(sizeof(*header) == 2 * ETHER_ADDR_LEN + ETHER_TYPE_LEN);
@@ -90,7 +90,7 @@ int myOnReceived(const void* buf, int len)
     dbg_printf("\n[Function: myOnReceived]***************\n");
     dbg_printf("[Info] [Payload]: ");
     for (int i = 0; i < len; ++i) {
-        dbg_printf("%02x ", *(u_int8_t*)((u_char*)buf + i));
+        dbg_printf("%0X ", *(u_int8_t*)((u_char*)buf + i));
     }
     dbg_printf("\n");
     return 0;

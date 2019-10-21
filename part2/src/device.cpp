@@ -6,17 +6,23 @@ int get_mac(char* mac, int len_limit, const std::string& name)
 {
 #ifdef __APPLE__
     ifaddrs* iflist;
+    u_char tmp[6];
     int found = -1;
     if (getifaddrs(&iflist) == 0) {
         for (ifaddrs* cur = iflist; cur; cur = cur->ifa_next) {
             if ((cur->ifa_addr->sa_family == AF_LINK) && (strcmp(cur->ifa_name, name.c_str()) == 0) && cur->ifa_addr) {
                 auto sdl = reinterpret_cast<sockaddr_dl*>(cur->ifa_addr);
-                memcpy(mac, LLADDR(sdl), sdl->sdl_alen);
+                memcpy(tmp, LLADDR(sdl), sdl->sdl_alen);
                 found = 1;
                 break;
             }
         }
         freeifaddrs(iflist);
+    }
+    if (found > 0) {
+        snprintf(mac, len_limit, "%X:%X:%X:%X:%X:%X",
+            tmp[0], tmp[1], tmp[2],
+            tmp[3], tmp[4], tmp[5]);
     }
     return found;
 #else
@@ -88,6 +94,26 @@ Device::~Device()
 
 frameReceiveCallback Device::onReceived = myOnReceived;
 
+std::pair<std::string, std::string> genMAC(const ether_header* header)
+{
+    char tmp1[20], tmp2[20] = { 0 };
+    snprintf(tmp1, 20, "%X:%X:%X:%X:%X:%X",
+        (unsigned char)header->ether_dhost[0],
+        (unsigned char)header->ether_dhost[1],
+        (unsigned char)header->ether_dhost[2],
+        (unsigned char)header->ether_dhost[3],
+        (unsigned char)header->ether_dhost[4],
+        (unsigned char)header->ether_dhost[5]);
+    snprintf(tmp2, 20, "%X:%X:%X:%X:%X:%X",
+        (unsigned char)header->ether_shost[0],
+        (unsigned char)header->ether_shost[1],
+        (unsigned char)header->ether_shost[2],
+        (unsigned char)header->ether_shost[3],
+        (unsigned char)header->ether_shost[4],
+        (unsigned char)header->ether_shost[5]);
+    return std::make_pair<std::string, std::string>(std::string(tmp1), std::string(tmp2));
+}
+
 void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
     const u_char* packet_content)
 {
@@ -105,13 +131,17 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
     memcpy(header, packet_content, 14);
     header->ether_type = ntohs(header->ether_type);
     dbg_printf(
-        "[Dest: %2x %2x %2x %2x %2x %2x]\n[Src: %2x %2x %2x %2x %2x "
-        "%2x]\n[Ethtype %04x]\n",
+        "[Dest: %X %X %X %X %X %X]\n[Src: %X %X %X %X %X "
+        "%X]\n[Ethtype %04x]\n",
         header->ether_dhost[0], header->ether_dhost[1], header->ether_dhost[2],
         header->ether_dhost[3], header->ether_dhost[4], header->ether_dhost[5],
         header->ether_shost[0], header->ether_shost[1], header->ether_shost[2],
         header->ether_shost[3], header->ether_shost[4], header->ether_shost[5],
         header->ether_type);
+    std::string dstMAC, srcMAC;
+    std::pair<std::string, std::string> res = genMAC(header);
+    dstMAC = res.first;
+    srcMAC = res.second;
     memcpy(content, packet_content + 14, size);
     Device::onReceived(content, size);
 }
