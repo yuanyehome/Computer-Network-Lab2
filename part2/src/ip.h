@@ -12,7 +12,7 @@ struct IP {
 
 struct compare_ip {
     bool operator()(const ip_addr ip1, const ip_addr ip2) const;
-}
+};
 
 /*
  * Internet Datagram Header
