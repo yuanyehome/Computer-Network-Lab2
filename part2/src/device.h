@@ -14,13 +14,13 @@ Description of this file:
 1) struct Device: send and manage a thread of pcap_loop;
 2) struct DeviceManager: manage all the devices;
 */
-
+struct Device;
 struct callback_args {
     dev_ID id;
-    callback_args(dev_ID id_)
+    Device* dev_ptr;
+    callback_args(dev_ID id_, Device* dev_ptr_)
         : id(id_)
-    {
-    }
+        , dev_ptr(dev_ptr_){};
 };
 
 struct Device {

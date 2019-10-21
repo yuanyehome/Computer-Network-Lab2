@@ -82,7 +82,7 @@ Device::Device(dev_ID id_, const std::string& name_, const std::string& mac_)
         return;
     }
     this->pcap = tmp_pcap;
-    args = new callback_args(id_);
+    args = new callback_args(id_, this);
     t = std::thread(pcap_loop, pcap, -1, my_pcap_callback, (u_char*)args);
 }
 
@@ -118,6 +118,7 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
     const u_char* packet_content)
 {
     dev_ID id = ((callback_args*)argument)->id;
+    Device* dev_ptr = ((callback_args*)argument)->dev_ptr;
     dbg_printf("[Info] [dev_ID %d] [Time: %d %d] [Caplen: %d] [Len: %d]\n", id,
         (int)packet_header->ts.tv_sec, (int)packet_header->ts.tv_usec,
         packet_header->caplen, packet_header->len);
@@ -142,6 +143,8 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
     std::pair<std::string, std::string> res = genMAC(header);
     dstMAC = res.first;
     srcMAC = res.second;
+    if ((srcMAC == dev_ptr->mac) || (dstMAC != dev_ptr->mac))
+        return;
     memcpy(content, packet_content + 14, size);
     Device::onReceived(content, size);
 }
