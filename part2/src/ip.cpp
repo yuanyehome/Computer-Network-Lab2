@@ -1,11 +1,18 @@
 #include "ip.h"
 #include "device.h"
 
-int IP::sendIPPacket(const struct in_addr src, const struct in_addr dest,
-                     int proto, const void *buf, int len)
+int sendIPPacket(DeviceManager mgr, const struct in_addr src, const struct in_addr dest,
+                 int proto, const void *buf, int len)
 {
+    auto dev_ptr = mgr.findDevice(src);
+    if (!dev_ptr)
+    {
+        dbg_printf("[ERROR] srcIP not found in this machine, please check your IP");
+    }
+
     return 0;
 }
+
 int IP::setIPPacketReceiveCallback(IPPacketReceiveCallback callback)
 {
     dbg_printf("[INFO] [Function] [setIPPacketReceiveCallback]************");

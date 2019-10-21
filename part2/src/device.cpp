@@ -52,9 +52,11 @@ Device::Device(dev_ID id_, const std::string &name_, const std::string &mac_)
     ifaddrs *if_link;
     if (getifaddrs(&if_link) < 0)
     {
-        throw "getifaddr failed!";
+        throw "[ERROR]getifaddr failed!";
         return;
     }
+    dev_ip.s_addr = 0;
+    subnetMask.s_addr = 0;
     ifaddrs *tmp;
     while (tmp)
     {
@@ -69,6 +71,7 @@ Device::Device(dev_ID id_, const std::string &name_, const std::string &mac_)
         }
         tmp = tmp->ifa_next;
     }
+    freeifaddrs(if_link);
     memset(errbuf, 0, sizeof(errbuf));
     pcap_t *tmp_pcap = pcap_open_live(name.c_str(), 65536, 0, 0, errbuf);
     if (!tmp_pcap)
@@ -87,58 +90,7 @@ Device::~Device()
     memset(errbuf, 0, PCAP_ERRBUF_SIZE);
 }
 
-DeviceManager::~DeviceManager()
-{
-    for (auto &dev : device_list)
-    {
-        delete dev;
-    }
-}
-
 frameReceiveCallback Device::onReceived = myOnReceived;
-
-dev_ID DeviceManager::addDevice(const std::string &dev_name)
-{
-    try
-    {
-        for (auto &dev : device_list)
-        {
-            if (dev->name == dev_name)
-            {
-                return dev->id;
-            }
-        }
-        char mac_[30];
-        if (get_mac(mac_, 30, dev_name) < 0)
-        {
-            dbg_printf("[Error] [addDevice] GetMac failed! \n");
-            return -1;
-        }
-        dbg_printf("[Info] Mac of device %s is %s \n", dev_name.c_str(), mac_);
-        const std::string mac(mac_);
-        Device *new_dev = new Device(device_list.size(), dev_name, mac);
-        device_list.push_back(new_dev);
-        return new_dev->id;
-    }
-    catch (const char *err_msg)
-    {
-        dbg_printf("[Error] [addDevice] %s\n", err_msg);
-        return -1;
-    }
-}
-
-dev_ID DeviceManager::findDevice(const std::string &dev_name)
-{
-    for (auto &dev : device_list)
-    {
-        if (dev->name == dev_name)
-        {
-            return dev->id;
-        }
-    }
-    dbg_printf("[Error] [findDevice] No such device in device_list! \n");
-    return -1;
-}
 
 void my_pcap_callback(u_char *argument, const struct pcap_pkthdr *packet_header, const u_char *packet_content)
 {

@@ -6,6 +6,7 @@
 void my_pcap_callback(u_char *argument, const struct pcap_pkthdr *packet_header, const u_char *packet_content);
 int myOnReceived(const void *buf, int len);
 void strToMac(std::string &mac, void *buf);
+int get_mac(char *mac, int len_limit, const std::string &name);
 
 /*
 Description of this file:
@@ -50,6 +51,7 @@ struct DeviceManager
 
     dev_ID addDevice(const std::string &dev_name);
     dev_ID findDevice(const std::string &dev_name);
+    Device *findDevice(const in_addr src);
     /**
      * @brief Register a callback function to be called each time an Ethernet II 
      * frame was received.
