@@ -2,13 +2,12 @@
 #define IP_H_
 #include "DEBUG.h"
 
-struct IP
-{
-    ip header;
-    IPPacketReceiveCallback IPCallback;
-    int setIPPacketReceiveCallback(IPPacketReceiveCallback callback);
-    int setRoutingTable(const struct in_addr dest, const struct in_addr mask,
-                        const void *nextHopMAC, const char *device);
+struct IP {
+  ip header;
+  IPPacketReceiveCallback IPCallback;
+  int setIPPacketReceiveCallback(IPPacketReceiveCallback callback);
+  int setRoutingTable(const struct in_addr dest, const struct in_addr mask,
+                      const void *nextHopMAC, const char *device);
 };
 
 /*
