@@ -27,8 +27,8 @@ int sendIPPacket(DeviceManager mgr,
     } else {
         try {
             dstMAC = Router::router_mgr.get_nexthop_mac(dest);
-        } catch (const char* err_msg) {
-            dbg_printf("[ERROR] %s [IP]=%s", err_msg, inet_ntoa(dest));
+        } catch (const char* e) {
+            dbg_printf("[ERROR] %s [IP]=%s\n", e, inet_ntoa(dest));
         }
     }
     return 0;
