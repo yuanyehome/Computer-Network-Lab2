@@ -3,6 +3,10 @@
 #include "device.h"
 #include "routeTable.h"
 
+namespace IP {
+    IPPacketReceiveCallback IPCallback;
+}
+
 bool in_same_subnet(ip_addr ip1, ip_addr ip2, ip_addr mask)
 {
     return ((ip1.s_addr & mask.s_addr) == (ip2.s_addr & mask.s_addr));

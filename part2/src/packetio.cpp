@@ -1,5 +1,3 @@
-#ifndef DEVICE_H
-#define DEVICE_H
 
 #include "DEBUG.h"
 #include "device.h"
@@ -16,7 +14,6 @@
 #include <sys/ioctl.h>
 #include <thread>
 #include <vector>
-#endif
 typedef int (*frameReceiveCallback)(const void*, int);
 
 void strToMac(const std::string& mac, u_char* buf)

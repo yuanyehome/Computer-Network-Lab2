@@ -3,7 +3,7 @@
 #include "DEBUG.h"
 
 namespace IP {
-IPPacketReceiveCallback IPCallback;
+extern IPPacketReceiveCallback IPCallback;
 int setIPPacketReceiveCallback(IPPacketReceiveCallback callback);
 int setRoutingTable(const struct in_addr dest, const struct in_addr mask,
     const void* nextHopMAC, const char* device);

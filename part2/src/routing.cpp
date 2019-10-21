@@ -1,5 +1,9 @@
 #include "routeTable.h"
 
+namespace Router {
+    router router_mgr;
+}
+
 bool Router::routerItem::contain_ip(const ip_addr& dst_ip) const
 {
     return ((dst_ip.s_addr & subnetMask.s_addr) == ip_prefix.s_addr);

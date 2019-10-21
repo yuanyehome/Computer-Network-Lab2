@@ -26,6 +26,6 @@ struct router {
         const std::string& nextHopMAC, Device* device);
     std::string get_nexthop_mac(const ip_addr& dstIP);
 };
-router router_mgr;
+extern router router_mgr;
 }
 #endif
