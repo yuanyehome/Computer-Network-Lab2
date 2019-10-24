@@ -1,4 +1,4 @@
-#include "device.h"
+#include "arp.h"
 
 typedef int (*frameReceiveCallback)(const void*, int);
 
@@ -143,8 +143,16 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
     std::pair<std::string, std::string> res = genMAC(header);
     dstMAC = res.first;
     srcMAC = res.second;
-    if ((srcMAC == dev_ptr->mac) || (dstMAC != dev_ptr->mac))
+    if ((srcMAC == dev_ptr->mac) || ((dstMAC != dev_ptr->mac) && dstMAC != "FF:FF:FF:FF:FF:FF"))
         return;
+    if (header->ether_type == ETHERTYPE_ARP) {
+        if (dstMAC == "FF:FF:FF:FF:FF:FF") {
+            arp::sendARPReply(dev_ptr, srcMAC);
+        } else if (dstMAC == dev_ptr->mac) {
+            arp::handleAPRReply(packet_content + 14, size);
+        } else
+            return;
+    }
     memcpy(content, packet_content + 14, size);
     Device::onReceived(content, size);
 }
