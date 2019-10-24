@@ -1,6 +1,0 @@
-/Users/yuanye/personal-workplace/OneDrive/19-20-1/计算机网络/labs/lab2-袁野-1700012821/lab2/code/build/CMakeFiles/rebuild_cache.dir
-/Users/yuanye/personal-workplace/OneDrive/19-20-1/计算机网络/labs/lab2-袁野-1700012821/lab2/code/build/CMakeFiles/edit_cache.dir
-/Users/yuanye/personal-workplace/OneDrive/19-20-1/计算机网络/labs/lab2-袁野-1700012821/lab2/code/build/CMakeFiles/net_stack.dir
-/Users/yuanye/personal-workplace/OneDrive/19-20-1/计算机网络/labs/lab2-袁野-1700012821/lab2/code/build/test_code/CMakeFiles/rebuild_cache.dir
-/Users/yuanye/personal-workplace/OneDrive/19-20-1/计算机网络/labs/lab2-袁野-1700012821/lab2/code/build/test_code/CMakeFiles/edit_cache.dir
-/Users/yuanye/personal-workplace/OneDrive/19-20-1/计算机网络/labs/lab2-袁野-1700012821/lab2/code/build/test_code/CMakeFiles/test_ether_main.dir
