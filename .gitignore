@@ -1,6 +1,6 @@
 *.zip
 *.pptx
-.vscode
+.vscode/*
 *.o
 **/*.o
 .DS_Store
