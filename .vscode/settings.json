@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "string": "cpp",
-        "thread": "cpp"
-    },
-    "python.pythonPath": "/usr/local/bin/python3"
-}
