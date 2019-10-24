@@ -2,9 +2,9 @@
 
 namespace arp {
 std::map<const ip_addr, const std::string, compare_ip> arp_map;
-}
 std::mutex condition_mutex;
 uint8_t cond;
+}
 std::string arp::findMAC(Device* dev_ptr, ip_addr target_ip)
 {
     if (arp_map.find(target_ip) != arp_map.end()) {
@@ -29,7 +29,7 @@ std::string arp::findMAC(Device* dev_ptr, ip_addr target_ip)
             time_variable += 0.1;
             if (time_variable > MAX_ARP_WATING_TIME) {
                 dbg_printf("[INFO] [arp::findMAC] [sendARPRequest Retrying] [targetIP: %s] [device_name: %s]",
-                    IPtoStr(target_ip), dev_ptr->name.c_str());
+                    IPtoStr(target_ip).c_str(), dev_ptr->name.c_str());
                 sendARPRequest(dev_ptr, target_ip);
                 time_variable = 0;
                 retry += 1;
@@ -46,7 +46,7 @@ std::string arp::findMAC(Device* dev_ptr, ip_addr target_ip)
                     }
                 } else {
                     dbg_printf("[ERROR] [ARP failed] [targetIP: %s] [device_name: %s]",
-                        IPtoStr(target_ip), dev_ptr->name.c_str());
+                        IPtoStr(target_ip).c_str(), dev_ptr->name.c_str());
                     cond = 0;
                 }
                 condition_mutex.unlock();
@@ -76,7 +76,7 @@ void arp::sendARPReply(Device* dev_ptr, std::string& dstMac, const ip_addr srcIP
     u_char IP[4];
     memcpy(IP, (u_char*)&(srcIP), 4);
     dbg_printf("[INFO] [FUNCTION] [sendARPReply] Reply an ARP Request for [IP: %s] from [MAC: %s]\n",
-        IPtoStr(srcIP), dstMac.c_str());
+        IPtoStr(srcIP).c_str(), dstMac.c_str());
     dev_ptr->sendFrame(IP, 4, ETHERTYPE_ARP, dstMac.c_str());
     return;
 }

@@ -28,6 +28,12 @@ void IP::packet::change_back()
     header.ip_sum = ntohs(header.ip_sum);
 }
 
+std::string IPtoStr(ip_addr IP)
+{
+    char ip[30];
+    snprintf(ip, 4, "%d:%d:%d:%d", IP.s_addr >> 24, (IP.s_addr >> 16) & 255, (IP.s_addr >> 8) & 255, IP.s_addr & 255);
+    return std::string(ip);
+}
 int sendIPPacket(DeviceManager mgr,
     const struct in_addr src,
     const struct in_addr dest,

@@ -6,7 +6,7 @@ int get_mac(char* mac, int len_limit, const std::string& name)
 {
 #ifdef __APPLE__
     ifaddrs* iflist;
-    u_char tmp[6];
+    u_char tmp[6] = { 0 };
     int found = -1;
     if (getifaddrs(&iflist) == 0) {
         for (ifaddrs* cur = iflist; cur; cur = cur->ifa_next) {
@@ -61,7 +61,7 @@ Device::Device(dev_ID id_, const std::string& name_, const std::string& mac_)
     }
     dev_ip.s_addr = 0;
     subnetMask.s_addr = 0;
-    ifaddrs* tmp;
+    ifaddrs* tmp = if_link;
     while (tmp) {
         if (strcmp(tmp->ifa_name, name_.c_str()) == 0) {
             auto tmp_tmp = (sockaddr_in*)tmp->ifa_addr;

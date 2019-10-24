@@ -25,8 +25,8 @@ struct callback_args {
 };
 
 struct Device {
-    dev_ID id;
     std::string name;
+    dev_ID id;
     const std::string mac;
     pcap_t* pcap;
     char errbuf[PCAP_ERRBUF_SIZE];
