@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.8)
-project(tcp_ip)
-set(LIB_NAME tcp_ip)
+cmake_minimum_required(VERSION 3.14)
+project(net_stack)
+set(LIB_NAME net_stack)
 
 SET(CMAKE_C_COMPILER /usr/bin/clang)
 SET(CMAKE_CXX_COMPILER /usr/bin/clang++)
@@ -23,14 +23,8 @@ include(FindPCAP.cmake)
 
 find_package(Threads)
 add_library(${LIB_NAME} SHARED ${proj_HEADERS} ${proj_SOURCES})
-target_link_libraries(tcp_ip ${PCAP_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(net_stack ${PCAP_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
 
-# Load all sub-cmakefiles.
-set(UTILS_ROOT "${PROJECT_SOURCE_DIR}/cmake")
-file(GLOB cmake_utils "${UTILS_ROOT}/*.cmake")
-foreach(util IN LISTS cmake_utils)
-    include(${util})
-endforeach(util)
 
 # Add subdirectories.
-add_subdirectory(tests)
+add_subdirectory(test_code)

@@ -4,7 +4,7 @@
 #include "routeTable.h"
 
 namespace IP {
-    IPPacketReceiveCallback IPCallback;
+IPPacketReceiveCallback IPCallback;
 }
 
 bool in_same_subnet(ip_addr ip1, ip_addr ip2, ip_addr mask)
@@ -43,7 +43,12 @@ int sendIPPacket(DeviceManager mgr,
     auto srcMac = dev_ptr->mac;
     std::string dstMAC;
     if (in_same_subnet(src, dest, dev_ptr->subnetMask)) {
-        dstMAC = arp::findMAC(dev_ptr, dest);
+        try {
+            dstMAC = arp::findMAC(dev_ptr, dest);
+        } catch (const char* err_msg) {
+            dbg_printf("[ERROR] %s [IP]=%s\n", err_msg, inet_ntoa(dest));
+            return -1;
+        }
     } else {
         try {
             dstMAC = Router::router_mgr.get_nexthop_mac(dest);

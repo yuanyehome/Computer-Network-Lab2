@@ -5,6 +5,7 @@
 #include <ifaddrs.h>
 #include <iostream>
 #include <map>
+#include <mutex>
 #include <net/ethernet.h>
 #include <net/if.h>
 #include <net/if_arp.h>
@@ -18,6 +19,9 @@
 #include <thread>
 #include <unistd.h>
 #include <vector>
+
+#define MAX_ARP_WATING_TIME 2
+#define MAX_ARP_RETRY 3
 
 #define DEBUG
 #ifdef DEBUG

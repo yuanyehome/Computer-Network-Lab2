@@ -146,11 +146,15 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
     if ((srcMAC == dev_ptr->mac) || ((dstMAC != dev_ptr->mac) && dstMAC != "FF:FF:FF:FF:FF:FF"))
         return;
     if (header->ether_type == ETHERTYPE_ARP) {
+        // ARP Related
+
+        // if broadcast, then go to Reply function;
         if (dstMAC == "FF:FF:FF:FF:FF:FF") {
             ip_addr* srcIP = (ip_addr*)(packet_content + 14);
             arp::sendARPReply(dev_ptr, srcMAC, *srcIP);
         } else if (dstMAC == dev_ptr->mac) {
-            arp::handleAPRReply(packet_content + 14, size);
+            // else if not broadcast, then it is a reply
+            arp::handleARPReply(packet_content + 14, size, srcMAC);
         } else
             return;
     }
