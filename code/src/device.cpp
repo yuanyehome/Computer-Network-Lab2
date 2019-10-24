@@ -147,7 +147,8 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
         return;
     if (header->ether_type == ETHERTYPE_ARP) {
         if (dstMAC == "FF:FF:FF:FF:FF:FF") {
-            arp::sendARPReply(dev_ptr, srcMAC);
+            ip_addr* srcIP = (ip_addr*)(packet_content + 14);
+            arp::sendARPReply(dev_ptr, srcMAC, *srcIP);
         } else if (dstMAC == dev_ptr->mac) {
             arp::handleAPRReply(packet_content + 14, size);
         } else

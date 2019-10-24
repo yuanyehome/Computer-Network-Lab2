@@ -19,15 +19,16 @@ void arp::sendARPRequest(Device* dev_ptr, ip_addr target_ip)
     u_char* char_mac = new u_char[6];
     memset(char_mac, 0xff, 6);
     u_char* buf = new u_char[4];
-    memcpy(buf, &target_ip, 4);
+    memcpy(buf, (u_char*)&target_ip, 4);
     dev_ptr->sendFrame(buf, 4, ETHERTYPE_ARP, char_mac);
     delete[] buf;
     delete[] char_mac;
 }
 
-void arp::sendARPReply(Device* dev_ptr, std::string& dstMac)
+void arp::sendARPReply(Device* dev_ptr, std::string& dstMac, const ip_addr srcIP)
 {
-    dbg_printf("[INFO] [FUNCTION] [sendARPReply] Reply an ARP Request for [IP: %s] from [MAC: %s]\n", IPtoStr(), dstMac.c_str());
+
+    dbg_printf("[INFO] [FUNCTION] [sendARPReply] Reply an ARP Request for [IP: %s] from [MAC: %s]\n", IPtoStr(srcIP), dstMac.c_str());
     return;
 }
 
