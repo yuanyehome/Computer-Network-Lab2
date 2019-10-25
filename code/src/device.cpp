@@ -2,6 +2,15 @@
 
 typedef int (*frameReceiveCallback)(const void*, int);
 
+std::string MacToString(const u_char* mac)
+{
+    char tmp[30];
+    snprintf(tmp, 30, "%X:%X:%X:%X:%X:%X",
+        mac[0], mac[1], mac[2],
+        mac[3], mac[4], mac[5]);
+    return std::string(tmp);
+}
+
 int get_mac(char* mac, int len_limit, const std::string& name)
 {
 #ifdef __APPLE__
@@ -141,8 +150,7 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
     memcpy(header, packet_content, 14);
     header->ether_type = ntohs(header->ether_type);
     dbg_printf(
-        "[Dest: %X:%X:%X:%X:%X:%X]\n[Src: %X:%X:%X:%X:%X "
-        "%X]\n[Ethtype %04x]\n",
+        "[Dest: %X:%X:%X:%X:%X:%X]\n[Src: %X:%X:%X:%X:%X:%X]\n[Ethtype %04x]\n",
         header->ether_dhost[0], header->ether_dhost[1], header->ether_dhost[2],
         header->ether_dhost[3], header->ether_dhost[4], header->ether_dhost[5],
         header->ether_shost[0], header->ether_shost[1], header->ether_shost[2],
@@ -156,16 +164,15 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
         return;
     if (header->ether_type == ETHERTYPE_ARP) {
         // ARP Related
-
-        // if broadcast, then go to Reply function;
-        if (dstMAC == "FF:FF:FF:FF:FF:FF") {
-            ip_addr* srcIP = (ip_addr*)(packet_content + 14);
-            arp::sendARPReply(dev_ptr, srcMAC, *srcIP);
-        } else if (dstMAC == dev_ptr->mac) {
-            // else if not broadcast, then it is a reply
+        arp::arpPacket pckt(packet_content + 14);
+        if (pckt.header.ar_op == ARPOP_REQUEST) {
+            arp::handleARPRequest(dev_ptr, pckt);
+        } else if (pckt.header.ar_op == ARPOP_REPLY) {
             arp::handleARPReply(packet_content + 14, size, srcMAC);
-        } else
+        } else {
+            dbg_printf("[WARNING] [Unsupported arp op type]");
             return;
+        }
     }
     memcpy(content, packet_content + 14, size);
     Device::onReceived(content, size);

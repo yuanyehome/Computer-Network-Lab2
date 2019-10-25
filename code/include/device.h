@@ -8,6 +8,7 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
     const u_char* packet_content);
 int myOnReceived(const void* buf, int len);
 void strToMac(const std::string& mac, u_char* buf);
+std::string MacToString(const u_char* mac);
 int get_mac(char* mac, int len_limit, const std::string& name);
 
 /*

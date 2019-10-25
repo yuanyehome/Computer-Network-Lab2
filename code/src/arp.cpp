@@ -58,38 +58,74 @@ std::string arp::findMAC(Device* dev_ptr, ip_addr target_ip)
 
 void arp::sendARPRequest(Device* dev_ptr, ip_addr target_ip)
 {
-    u_char* char_mac = new u_char[6];
-    memset(char_mac, 0xff, 6);
-    u_char* buf = new u_char[4];
-    memcpy(buf, (u_char*)&target_ip, 4);
-    dev_ptr->sendFrame(buf, 4, ETHERTYPE_ARP, char_mac);
-    delete[] buf;
-    delete[] char_mac;
+    u_char dstMac[6];
+    memset(dstMac, 0xff, 6);
+    arpPacket request;
+    request.header.ar_op = ARPOP_REQUEST;
+    request.srcIP = dev_ptr->dev_ip;
+    strToMac(dev_ptr->mac, request.srcMac);
+    request.dstIP = target_ip;
+    memset(request.dstMac, 0, 6);
+    dev_ptr->sendFrame(&request, sizeof(request), ETHERTYPE_ARP, dstMac);
 }
 
-void arp::sendARPReply(Device* dev_ptr, std::string& dstMac, const ip_addr srcIP)
+void arp::handleARPRequest(Device* dev_ptr, arpPacket& pckt)
 {
-    // if not request me
-    if (srcIP.s_addr != dev_ptr->dev_ip.s_addr)
+    if (pckt.dstIP.s_addr != dev_ptr->dev_ip.s_addr)
         return;
-    // else
-    u_char IP[4];
-    memcpy(IP, (u_char*)&(srcIP), 4);
-    dbg_printf("[INFO] [FUNCTION] [sendARPReply] Reply an ARP Request for [IP: %s] from [MAC: %s]\n",
-        IPtoStr(srcIP).c_str(), dstMac.c_str());
-    dev_ptr->sendFrame(IP, 4, ETHERTYPE_ARP, dstMac.c_str());
-    return;
+    else {
+        arpPacket reply;
+        reply.header.ar_op = ARPOP_REPLY;
+        reply.srcIP = pckt.dstIP;
+        u_char mac[6];
+        strToMac(dev_ptr->mac, mac);
+        memcpy(reply.srcMac, mac, 6);
+        reply.dstIP = pckt.srcIP;
+        memcpy(reply.dstMac, pckt.srcMac, 6);
+        reply.change_to_net_order();
+        dev_ptr->sendFrame(&reply, sizeof(reply), ETHERTYPE_ARP, pckt.srcMac);
+    }
 }
 
 void arp::handleARPReply(const void* buf, int len, std::string& targetMAC)
 {
-
-    assert(len == 4);
-    ip_addr* ip_ptr = (ip_addr*)buf;
-    assert(arp_map.find(*ip_ptr) == arp_map.end());
-    assert(cond == 1);
+    dbg_printf("[INFO] [handleARPReply]");
+    arpPacket pckt(buf);
+    ip_addr targetIP = pckt.srcIP;
+    std::string pckt_targetMAC = MacToString(pckt.srcMac);
+    dbg_printf("[INFO] [COMPARE] [eth_hdr_srcmac: %s] [arp_hdr_srcmac: %s]", pckt_targetMAC.c_str(), targetMAC.c_str());
+    assert(targetMAC == pckt_targetMAC);
+    assert(arp_map.find(targetIP) == arp_map.end());
     condition_mutex.lock();
-    arp_map.insert(std::make_pair(*ip_ptr, targetMAC));
+    arp_map.insert(std::make_pair(targetIP, targetMAC));
     cond = 0;
     condition_mutex.unlock();
+}
+
+arp::arpPacket::arpPacket(const void* buf)
+{
+    memcpy(this, buf, sizeof(arpPacket));
+    this->change_back();
+}
+
+arp::arpPacket::arpPacket()
+{
+    header.ar_hrd = ARPHRD_ETHER;
+    header.ar_pro = ETHERTYPE_IP;
+    header.ar_hln = ETHER_ADDR_LEN;
+    header.ar_pln = 4;
+}
+
+void arp::arpPacket::change_to_net_order()
+{
+    header.ar_hrd = htons(header.ar_hrd);
+    header.ar_pro = htons(header.ar_pro);
+    header.ar_op = htons(header.ar_op);
+}
+
+void arp::arpPacket::change_back()
+{
+    header.ar_hrd = ntohs(header.ar_hrd);
+    header.ar_pro = ntohs(header.ar_pro);
+    header.ar_op = ntohs(header.ar_op);
 }
