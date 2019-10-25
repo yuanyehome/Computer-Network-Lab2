@@ -141,7 +141,7 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
     memcpy(header, packet_content, 14);
     header->ether_type = ntohs(header->ether_type);
     dbg_printf(
-        "[Dest: %X %X %X %X %X %X]\n[Src: %X %X %X %X %X "
+        "[Dest: %X:%X:%X:%X:%X:%X]\n[Src: %X:%X:%X:%X:%X "
         "%X]\n[Ethtype %04x]\n",
         header->ether_dhost[0], header->ether_dhost[1], header->ether_dhost[2],
         header->ether_dhost[3], header->ether_dhost[4], header->ether_dhost[5],
