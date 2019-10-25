@@ -88,10 +88,14 @@ int myOnReceived(const void* buf, int len)
 {
     dbg_printf("\n[Function: myOnReceived]***************\n");
     dbg_printf("[Info] [Payload]: ");
-    for (int i = 0; i < len; ++i) {
+    int tmp_len = std::min(len, 10);
+    for (int i = 0; i < tmp_len; ++i) {
         dbg_printf("%0X ", *(u_int8_t*)((u_char*)buf + i));
     }
     dbg_printf("\n");
+    if (len > 10) {
+        dbg_printf("......\n");
+    }
     IP::IPCallback(buf, len);
     return 0;
 }
