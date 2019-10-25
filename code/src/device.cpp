@@ -63,17 +63,26 @@ Device::Device(dev_ID id_, const std::string& name_, const std::string& mac_)
     subnetMask.s_addr = 0;
     ifaddrs* tmp = if_link;
     while (tmp) {
-        if (strcmp(tmp->ifa_name, name_.c_str()) == 0) {
-            auto tmp_tmp = (sockaddr_in*)tmp->ifa_addr;
+        if (strcmp(tmp->ifa_name, name_.c_str()) == 0 && tmp->ifa_addr->sa_family == AF_INET) {
+            // std::cout << "here debug: [NAME] " << tmp->ifa_name << std::endl;
+            // std::cout << "here debug: [AF_INET] " << (int)tmp->ifa_addr->sa_family << std::endl;
+            auto tmp_tmp = (sockaddr_in*)(tmp->ifa_addr);
             dev_ip = tmp_tmp->sin_addr;
-            tmp_tmp = (sockaddr_in*)tmp->ifa_netmask;
+            tmp_tmp = (sockaddr_in*)(tmp->ifa_netmask);
             subnetMask = tmp_tmp->sin_addr;
+            char tmp_ip[30], tmp_mask[30];
+            strcpy(tmp_ip, inet_ntoa(dev_ip));
+            strcpy(tmp_mask, inet_ntoa(subnetMask));
             dbg_printf("[INFO] The IP address of %s is %s, subnetMask is %s\n",
-                name_.c_str(), inet_ntoa(dev_ip), inet_ntoa(subnetMask));
+                name_.c_str(), IPtoStr(dev_ip).c_str(), IPtoStr(subnetMask).c_str());
+            dbg_printf("[Compare] [INFO] The IP address of %s is %s, subnetMask is %s\n",
+                name_.c_str(), tmp_ip, tmp_mask);
             break;
         }
         tmp = tmp->ifa_next;
     }
+    if (dev_ip.s_addr == 0)
+        dbg_printf("[WARNING] This device have no IP\n");
     freeifaddrs(if_link);
     memset(errbuf, 0, sizeof(errbuf));
     pcap_t* tmp_pcap = pcap_open_live(name.c_str(), 65536, 0, 0, errbuf);

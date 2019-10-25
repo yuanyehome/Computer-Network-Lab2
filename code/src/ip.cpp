@@ -10,11 +10,17 @@ IPPacketReceiveCallback IPCallback;
 // buf and len are both a whole IP packet
 int IP::myIPCallback(const void* buf, const int len)
 {
-    packet* pckt = (packet*)buf;
-    dbg_printf("[INFO] [myIPCallback] [srcIP: %s] [dstIP: %s]",
-        IPtoStr(pckt->header.ip_src).c_str(), IPtoStr(pckt->header.ip_dst).c_str());
-    pckt->change_back();
-    pckt->payload = (u_char*)buf + 20;
+    try {
+        packet* pckt = (packet*)buf;
+        dbg_printf("[INFO] [myIPCallback] [srcIP: %s] [dstIP: %s]",
+            IPtoStr(pckt->header.ip_src).c_str(), IPtoStr(pckt->header.ip_dst).c_str());
+        pckt->change_back();
+        pckt->payload = (u_char*)buf + 20;
+    } catch (const char* err_msg) {
+        dbg_printf("[ERROR] [myIPCallback] %s", err_msg);
+        return -1;
+    }
+    return 0;
 }
 
 bool in_same_subnet(ip_addr ip1, ip_addr ip2, ip_addr mask)
@@ -40,8 +46,8 @@ void IP::packet::change_back()
 
 std::string IPtoStr(ip_addr IP)
 {
-    char ip[30];
-    snprintf(ip, 4, "%d:%d:%d:%d", IP.s_addr >> 24, (IP.s_addr >> 16) & 255, (IP.s_addr >> 8) & 255, IP.s_addr & 255);
+    char ip[30] = { 0 };
+    snprintf(ip, 30, "%d.%d.%d.%d", IP.s_addr & 255, (IP.s_addr >> 8) & 255, (IP.s_addr >> 16) & 255, IP.s_addr >> 24);
     return std::string(ip);
 }
 int sendIPPacket(DeviceManager mgr,
