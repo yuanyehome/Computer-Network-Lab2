@@ -92,6 +92,7 @@ int myOnReceived(const void* buf, int len)
         dbg_printf("%0X ", *(u_int8_t*)((u_char*)buf + i));
     }
     dbg_printf("\n");
+    IP::IPCallback(buf, len);
     return 0;
 }
 

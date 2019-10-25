@@ -7,6 +7,16 @@ namespace IP {
 IPPacketReceiveCallback IPCallback;
 }
 
+// buf and len are both a whole IP packet
+int IP::myIPCallback(const void* buf, const int len)
+{
+    packet* pckt = (packet*)buf;
+    dbg_printf("[INFO] [myIPCallback] [srcIP: %s] [dstIP: %s]",
+        IPtoStr(pckt->header.ip_src).c_str(), IPtoStr(pckt->header.ip_dst).c_str());
+    pckt->change_back();
+    pckt->payload = (u_char*)buf + 20;
+}
+
 bool in_same_subnet(ip_addr ip1, ip_addr ip2, ip_addr mask)
 {
     return ((ip1.s_addr & mask.s_addr) == (ip2.s_addr & mask.s_addr));
@@ -67,7 +77,7 @@ int sendIPPacket(DeviceManager mgr,
     pckt.header.ip_src = src;
     pckt.header.ip_dst = dest;
     pckt.header.ip_p = proto;
-    pckt.payload = (const u_char*)buf;
+    pckt.payload = (u_char*)buf;
     int total_len = pckt.header.ip_hl + len;
     pckt.header.ip_len = total_len;
     pckt.change_to_net_byte_order();

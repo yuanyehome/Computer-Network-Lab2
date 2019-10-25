@@ -7,9 +7,10 @@ extern IPPacketReceiveCallback IPCallback;
 int setIPPacketReceiveCallback(IPPacketReceiveCallback callback);
 int setRoutingTable(const struct in_addr dest, const struct in_addr mask,
     const void* nextHopMAC, const char* device);
+int myIPCallback(const void* buf, const int len);
 struct packet {
     ip header;
-    const u_char* payload;
+    u_char* payload;
     packet()
     {
         header.ip_v = 4;
