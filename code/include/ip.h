@@ -9,8 +9,10 @@ int setRoutingTable(const struct in_addr dest, const struct in_addr mask,
     const void* nextHopMAC, const char* device);
 int myIPCallback(const void* buf, const int len);
 struct packet {
-    ip header;
-    u_char* payload;
+    struct __attribute__((__packed__)) {
+        ip header;
+        u_char* payload;
+    };
     packet()
     {
         header.ip_v = 4;

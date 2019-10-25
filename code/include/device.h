@@ -18,8 +18,10 @@ Description of this file:
 */
 struct Device;
 struct callback_args {
-    dev_ID id;
-    Device* dev_ptr;
+    struct __attribute__((__packed__)) {
+        dev_ID id;
+        Device* dev_ptr;
+    };
     callback_args(dev_ID id_, Device* dev_ptr_)
         : id(id_)
         , dev_ptr(dev_ptr_){};
