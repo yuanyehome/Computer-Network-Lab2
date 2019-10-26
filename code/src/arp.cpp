@@ -28,7 +28,7 @@ std::string arp::findMAC(Device* dev_ptr, ip_addr target_ip)
             }
             time_variable += 0.1;
             if (time_variable > MAX_ARP_WATING_TIME) {
-                dbg_printf("[INFO] [arp::findMAC] [sendARPRequest Retrying] [targetIP: %s] [device_name: %s]",
+                dbg_printf("\033[32m[INFO]\033[0m [arp::findMAC] [sendARPRequest Retrying] [targetIP: %s] [device_name: %s]",
                     IPtoStr(target_ip).c_str(), dev_ptr->name.c_str());
                 sendARPRequest(dev_ptr, target_ip);
                 time_variable = 0;
@@ -45,7 +45,7 @@ std::string arp::findMAC(Device* dev_ptr, ip_addr target_ip)
                         condition_mutex.unlock();
                     }
                 } else {
-                    dbg_printf("[ERROR] [ARP failed] [targetIP: %s] [device_name: %s]",
+                    dbg_printf("\033[31m[ERROR]\033[0m [ARP failed] [targetIP: %s] [device_name: %s]",
                         IPtoStr(target_ip).c_str(), dev_ptr->name.c_str());
                     cond = 0;
                 }
@@ -89,11 +89,11 @@ void arp::handleARPRequest(Device* dev_ptr, arpPacket& pckt)
 
 void arp::handleARPReply(const void* buf, int len, std::string& targetMAC)
 {
-    dbg_printf("[INFO] [handleARPReply]");
+    dbg_printf("\033[32m[INFO]\033[0m [handleARPReply]");
     arpPacket pckt(buf);
     ip_addr targetIP = pckt.srcIP;
     std::string pckt_targetMAC = MacToString(pckt.srcMac);
-    dbg_printf("[INFO] [COMPARE] [eth_hdr_srcmac: %s] [arp_hdr_srcmac: %s]", pckt_targetMAC.c_str(), targetMAC.c_str());
+    dbg_printf("\033[32m[INFO]\033[0m [COMPARE] [eth_hdr_srcmac: %s] [arp_hdr_srcmac: %s]", pckt_targetMAC.c_str(), targetMAC.c_str());
     assert(targetMAC == pckt_targetMAC);
     assert(arp_map.find(targetIP) == arp_map.end());
     condition_mutex.lock();

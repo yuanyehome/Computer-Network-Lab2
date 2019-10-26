@@ -12,12 +12,12 @@ int IP::myIPCallback(const void* buf, const int len)
 {
     try {
         packet* pckt = (packet*)buf;
-        dbg_printf("[INFO] [myIPCallback] [srcIP: %s] [dstIP: %s]",
+        dbg_printf("\033[32m[INFO]\033[0m [myIPCallback] [srcIP: %s] [dstIP: %s]",
             IPtoStr(pckt->header.ip_src).c_str(), IPtoStr(pckt->header.ip_dst).c_str());
         pckt->change_back();
         pckt->payload = (u_char*)buf + 20;
     } catch (const char* err_msg) {
-        dbg_printf("[ERROR] [myIPCallback] %s", err_msg);
+        dbg_printf("\033[31m[ERROR]\033[0m [myIPCallback] %s", err_msg);
         return -1;
     }
     return 0;
@@ -59,7 +59,7 @@ int sendIPPacket(DeviceManager mgr,
 {
     auto dev_ptr = mgr.findDevice(src);
     if (!dev_ptr) {
-        dbg_printf("[ERROR] srcIP not found in this machine, please check your IP");
+        dbg_printf("\033[31m[ERROR]\033[0m srcIP not found in this machine, please check your IP");
         return -1;
     }
     auto srcMac = dev_ptr->mac;
@@ -68,14 +68,14 @@ int sendIPPacket(DeviceManager mgr,
         try {
             dstMAC = arp::findMAC(dev_ptr, dest);
         } catch (const char* err_msg) {
-            dbg_printf("[ERROR] %s [IP]=%s\n", err_msg, inet_ntoa(dest));
+            dbg_printf("\033[31m[ERROR]\033[0m %s [IP]=%s\n", err_msg, inet_ntoa(dest));
             return -1;
         }
     } else {
         try {
             dstMAC = Router::router_mgr.get_nexthop_mac(dest);
         } catch (const char* e) {
-            dbg_printf("[ERROR] %s [IP]=%s\n", e, inet_ntoa(dest));
+            dbg_printf("\033[31m[ERROR]\033[0m %s [IP]=%s\n", e, inet_ntoa(dest));
             return -1;
         }
     }
@@ -100,11 +100,11 @@ int sendIPPacket(DeviceManager mgr,
 
 int IP::setIPPacketReceiveCallback(IPPacketReceiveCallback callback)
 {
-    dbg_printf("[INFO] [Function] [setIPPacketReceiveCallback]************");
+    dbg_printf("\033[32m[INFO]\033[0m [Function] [setIPPacketReceiveCallback]************\n");
     try {
         IPCallback = callback;
     } catch (const char* err_msg) {
-        dbg_printf("[Error] [Function] [setIPPacketReceiveCallback] %s\n", err_msg);
+        dbg_printf("\033[31m[ERROR]\033[0m [Function] [setIPPacketReceiveCallback] %s\n", err_msg);
         return -1;
     }
     return 0;

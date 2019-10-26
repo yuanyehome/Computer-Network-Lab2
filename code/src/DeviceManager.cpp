@@ -17,16 +17,16 @@ dev_ID DeviceManager::addDevice(const std::string& dev_name)
         }
         char mac_[30];
         if (get_mac(mac_, 30, dev_name) < 0) {
-            dbg_printf("[Error] [addDevice] GetMac failed! \n");
+            dbg_printf("\033[31m[ERROR]\033[0m [addDevice] GetMac failed! \n");
             return -1;
         }
-        dbg_printf("[Info] Mac of device %s is %s \n", dev_name.c_str(), mac_);
+        dbg_printf("\033[32m[INFO]\033[0m Mac of device %s is %s \n", dev_name.c_str(), mac_);
         const std::string mac(mac_);
         Device* new_dev = new Device(device_list.size(), dev_name, mac);
         device_list.push_back(new_dev);
         return new_dev->id;
     } catch (const char* err_msg) {
-        dbg_printf("[Error] [addDevice] %s\n", err_msg);
+        dbg_printf("\033[31m[ERROR]\033[0m [addDevice] %s\n", err_msg);
         return -1;
     }
 }
@@ -38,7 +38,7 @@ dev_ID DeviceManager::findDevice(const std::string& dev_name)
             return dev->id;
         }
     }
-    dbg_printf("[Error] [findDevice] No such device in device_list! \n");
+    dbg_printf("\033[31m[ERROR]\033[0m [findDevice] No such device in device_list! \n");
     return -1;
 }
 

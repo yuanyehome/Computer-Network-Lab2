@@ -65,7 +65,7 @@ Device::Device(dev_ID id_, const std::string& name_, const std::string& mac_)
 {
     ifaddrs* if_link;
     if (getifaddrs(&if_link) < 0) {
-        throw "[ERROR]getifaddr failed!";
+        throw "\033[31m[ERROR]\033[0mgetifaddr failed!";
         return;
     }
     dev_ip.s_addr = 0;
@@ -82,16 +82,16 @@ Device::Device(dev_ID id_, const std::string& name_, const std::string& mac_)
             char tmp_ip[30], tmp_mask[30];
             strcpy(tmp_ip, inet_ntoa(dev_ip));
             strcpy(tmp_mask, inet_ntoa(subnetMask));
-            dbg_printf("[INFO] The IP address of %s is %s, subnetMask is %s\n",
+            dbg_printf("\033[32m[INFO]\033[0m The IP address of %s is %s, subnetMask is %s\n",
                 name_.c_str(), IPtoStr(dev_ip).c_str(), IPtoStr(subnetMask).c_str());
-            dbg_printf("[Compare] [INFO] The IP address of %s is %s, subnetMask is %s\n",
+            dbg_printf("\033[35m[Compare INFO]\033[0m The IP address of %s is %s, subnetMask is %s\n",
                 name_.c_str(), tmp_ip, tmp_mask);
             break;
         }
         tmp = tmp->ifa_next;
     }
     if (dev_ip.s_addr == 0)
-        dbg_printf("[WARNING] This device have no IP\n");
+        dbg_printf("\033[31m[WARNING]\033[0m This device have no IP\n");
     freeifaddrs(if_link);
     memset(errbuf, 0, sizeof(errbuf));
     pcap_t* tmp_pcap = pcap_open_live(name.c_str(), 65536, 0, 0, errbuf);
@@ -137,11 +137,11 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
 {
     dev_ID id = ((callback_args*)argument)->id;
     Device* dev_ptr = ((callback_args*)argument)->dev_ptr;
-    dbg_printf("[Info] [dev_ID %d] [Time: %d %d] [Caplen: %d] [Len: %d]\n", id,
+    dbg_printf("\033[32m[INFO]\033[0m [dev_ID %d] [Time: %d %d] [Caplen: %d] [Len: %d]\n", id,
         (int)packet_header->ts.tv_sec, (int)packet_header->ts.tv_usec,
         packet_header->caplen, packet_header->len);
     if (packet_header->caplen != packet_header->len) {
-        dbg_printf("[Error] [my_pcap_callback] Some data is lost!\n");
+        dbg_printf("\033[31m[ERROR]\033[0m [my_pcap_callback] Some data is lost!\n");
         return;
     }
     size_t size = packet_header->caplen - 18;
@@ -157,7 +157,7 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
         header->ether_shost[3], header->ether_shost[4], header->ether_shost[5],
         header->ether_type);
     if (header->ether_type == ETHERTYPE_ARP) {
-        dbg_printf("\033[36m[Special INFO][This is an ARP frame]\n");
+        dbg_printf("\033[33m[Special INFO][This is an ARP frame]\n");
     }
     std::string dstMAC, srcMAC;
     std::pair<std::string, std::string> res = genMAC(header);
@@ -173,7 +173,7 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
         } else if (pckt.header.ar_op == ARPOP_REPLY) {
             arp::handleARPReply(packet_content + 14, size, srcMAC);
         } else {
-            dbg_printf("[WARNING] [Unsupported arp op type]");
+            dbg_printf("\033[31m[WARNING]\033[0m [Unsupported arp op type]");
             return;
         }
     }

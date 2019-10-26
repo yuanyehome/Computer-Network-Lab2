@@ -66,10 +66,10 @@ int Device::sendFrame(const void* buf, int len, int ethtype,
     delete[] tmp;
     delete[] frame;
     if (stat < 0) {
-        dbg_printf("[Error] [sendFrame] [pcap_sendpacket]\n");
+        dbg_printf("\033[31m[ERROR]\033[0m [sendFrame] [pcap_sendpacket]\n");
         return -1;
     }
-    dbg_printf("[Info] [sendFrame] send  succeeded!\n");
+    dbg_printf("\033[32m[INFO]\033[0m [sendFrame] send  succeeded!\n");
     return 0;
 }
 
@@ -87,7 +87,7 @@ int Device::sendFrame(const void* buf, int len, int ethtype,
 int myOnReceived(const void* buf, int len)
 {
     dbg_printf("\n[Function: myOnReceived]***************\n");
-    dbg_printf("[Info] [Payload]: ");
+    dbg_printf("\033[32m[INFO]\033[0m [Payload]: ");
     int tmp_len = std::min(len, 10);
     for (int i = 0; i < tmp_len; ++i) {
         dbg_printf("%0X ", *(u_int8_t*)((u_char*)buf + i));
@@ -106,7 +106,7 @@ int DeviceManager::setFrameReceiveCallback(frameReceiveCallback callback)
     try {
         Device::onReceived = callback;
     } catch (const char* err_msg) {
-        dbg_printf("[Error] [setFrameReceiveCallback] %s\n", err_msg);
+        dbg_printf("\033[31m[ERROR]\033[0m [setFrameReceiveCallback] %s\n", err_msg);
         return -1;
     }
     return 0;
