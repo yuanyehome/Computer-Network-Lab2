@@ -9,7 +9,9 @@
 #include <net/ethernet.h>
 #include <net/if.h>
 #include <net/if_arp.h>
+#ifdef __APPLE__
 #include <net/if_dl.h>
+#endif
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <pcap/pcap.h>
@@ -31,7 +33,7 @@
 #define dbg_printf(...)
 #endif
 typedef in_addr ip_addr;
-typedef int (*IPPacketReceiveCallback)(const void* buf, int len);
+typedef int (*IPPacketReceiveCallback)(const void *buf, int len);
 typedef int dev_ID;
-typedef int (*frameReceiveCallback)(const void*, int);
+typedef int (*frameReceiveCallback)(const void *, int);
 typedef int distance;
