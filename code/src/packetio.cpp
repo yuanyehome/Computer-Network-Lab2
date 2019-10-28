@@ -58,7 +58,7 @@ int Device::sendFrame(const void* buf, int len, int ethtype,
     if (len) {
         memcpy(frame + 2 * ETHER_ADDR_LEN + ETHER_TYPE_LEN, buf, len);
     }
-    for (int i = size - ETHER_TYPE_LEN; i < size; ++i) {
+    for (int i = size - ETHER_CRC_LEN; i < size; ++i) {
         frame[i] = 0;
         // checksum, not implement;
     }
@@ -69,7 +69,7 @@ int Device::sendFrame(const void* buf, int len, int ethtype,
         dbg_printf("\033[31m[ERROR]\033[0m [sendFrame] [pcap_sendpacket]\n");
         return -1;
     }
-    dbg_printf("\033[32m[INFO]\033[0m [sendFrame] send  succeeded!\n");
+    dbg_printf("\033[32m[INFO]\033[0m [sendFrame] send succeeded! [size: %d]\n", size);
     return 0;
 }
 
