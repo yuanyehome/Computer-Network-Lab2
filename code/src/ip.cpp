@@ -88,7 +88,7 @@ int sendIPPacket(DeviceManager mgr,
     pckt.header.ip_dst = dest;
     pckt.header.ip_p = proto;
     pckt.payload = (u_char*)buf;
-    int total_len = pckt.header.ip_hl << 2 + len;
+    int total_len = (pckt.header.ip_hl << 2) + len;
     pckt.header.ip_len = total_len;
     pckt.change_to_net_byte_order();
     u_char* IPpacket_final = new u_char[total_len];
