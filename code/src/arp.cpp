@@ -72,6 +72,7 @@ void arp::sendARPRequest(Device* dev_ptr, ip_addr target_ip)
     strToMac(dev_ptr->mac, request.srcMac);
     request.dstIP = target_ip;
     memset(request.dstMac, 0, 6);
+    request.change_to_net_order();
     dev_ptr->sendFrame(&request, sizeof(request), ETHERTYPE_ARP, dstMac);
 }
 
