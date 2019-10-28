@@ -69,7 +69,7 @@ int Device::sendFrame(const void* buf, int len, int ethtype,
         dbg_printf("\033[31m[ERROR]\033[0m [sendFrame] [pcap_sendpacket]\n");
         return -1;
     }
-    dbg_printf("\033[32m[INFO]\033[0m [sendFrame] send succeeded! [size: %d]\n", size);
+    dbg_printf("\033[32m[INFO]\033[0m [sendFrame] send succeeded! [size: %d]\n", (int)size);
     return 0;
 }
 
