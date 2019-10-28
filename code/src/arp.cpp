@@ -110,7 +110,7 @@ void arp::handleARPReply(const void* buf, int len, std::string& targetMAC)
         dbg_printf("%s\n", inet_ntoa(targetIP));
         dbg_printf("%s\n", arp_map.at(targetIP).c_str());
     }
-    assert(arp_map.find(targetIP) == arp_map.end());
+    // assert(arp_map.find(targetIP) == arp_map.end());
     condition_mutex.lock();
     arp_map.insert(std::make_pair(targetIP, targetMAC));
     cond = 0;
