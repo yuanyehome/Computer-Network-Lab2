@@ -164,19 +164,20 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
     dstMAC = res.first;
     srcMAC = res.second;
     if ((srcMAC == dev_ptr->mac) || ((dstMAC != dev_ptr->mac) && dstMAC != "FF:FF:FF:FF:FF:FF")) {
-        dbg_printf("\033[32m[INFO]\033[0m [dropped packet]");
+        dbg_printf("\033[32m[INFO]\033[0m [dropped packet]\n");
         return;
     }
+    dbg_printf("\033[31m??????\033[0m\n");
     if (header->ether_type == ETHERTYPE_ARP) {
         // ARP Related
         arp::arpPacket pckt(packet_content + 14);
-        dbg_printf("\033[33m[INFO]\033[0m [ARP_OP: %d]", pckt.header.ar_op);
+        dbg_printf("\033[33m[INFO]\033[0m [ARP_OP: %d]\n", pckt.header.ar_op);
         if (pckt.header.ar_op == ARPOP_REQUEST) {
             arp::handleARPRequest(dev_ptr, pckt);
         } else if (pckt.header.ar_op == ARPOP_REPLY) {
             arp::handleARPReply(packet_content + 14, size, srcMAC);
         } else {
-            dbg_printf("\033[31m[WARNING]\033[0m [Unsupported arp op type]");
+            dbg_printf("\033[31m[WARNING]\033[0m [Unsupported arp op type]\n");
             return;
         }
     }
