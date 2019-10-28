@@ -103,6 +103,7 @@ void arp::handleARPReply(const void* buf, int len, std::string& targetMAC)
     std::string pckt_targetMAC = MacToString(pckt.srcMac);
     dbg_printf("\033[32m[INFO]\033[0m \033[33m[COMPARE]\033[0m] [eth_hdr_srcmac: %s] [arp_hdr_srcmac: %s]\n", pckt_targetMAC.c_str(), targetMAC.c_str());
     assert(targetMAC == pckt_targetMAC);
+    dbg_printf("%s\n", inet_ntoa(targetIP));
     // if (arp_map.find(targetIP) == arp_map.end()) {
     //     dbg_printf("assert success\n");
     //     sleep(1000);
