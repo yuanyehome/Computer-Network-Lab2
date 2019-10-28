@@ -32,7 +32,7 @@ int main()
         inet_aton("10.100.1.2", &dst);
         u_char buf[6] = "hello";
         sendIPPacket(manager, src, dst, IPPROTO_UDP, buf, 6);
-        sleep(10);
+        sleep(1000);
     }
 
     return 0;
