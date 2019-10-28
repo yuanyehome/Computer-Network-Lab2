@@ -96,6 +96,7 @@ int sendIPPacket(DeviceManager mgr,
     strToMac(dstMAC, char_mac);
     memcpy(IPpacket_final, &pckt.header, pckt.header.ip_hl);
     memcpy(IPpacket_final, pckt.payload, len);
+    dbg_printf("\033[33m[INFO]\033[0m [total_len: %d]", total_len);
     dev_ptr->sendFrame(IPpacket_final, total_len, ETHERTYPE_IP, char_mac);
     delete[] char_mac;
     delete[] IPpacket_final;
