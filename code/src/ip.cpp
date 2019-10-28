@@ -62,7 +62,7 @@ int sendIPPacket(DeviceManager mgr,
         IPtoStr(src).c_str(), IPtoStr(dest).c_str());
     auto dev_ptr = mgr.findDevice(src);
     if (!dev_ptr) {
-        dbg_printf("\033[31m[ERROR]\033[0m srcIP not found in this machine, please check your IP");
+        dbg_printf("\033[31m[ERROR]\033[0m srcIP not found in this machine, please check your IP\n");
         return -1;
     }
     auto srcMac = dev_ptr->mac;
