@@ -180,6 +180,10 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
             return;
         }
     } else {
+        if (header->ether_type == ETHERTYPE_IPV6){
+            dbg_printf("\033[31m[WARNING]\033[0m [unsupported ether_type]\n");
+            return;
+        }
         memcpy(content, packet_content + 14, size);
         Device::onReceived(content, size);
     }
