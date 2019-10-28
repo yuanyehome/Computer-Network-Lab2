@@ -1,6 +1,7 @@
 #ifndef IP_H_
 #define IP_H_
 #include "DEBUG.h"
+#include "device.h"
 
 namespace IP {
 extern IPPacketReceiveCallback IPCallback;
