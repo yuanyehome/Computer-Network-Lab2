@@ -137,7 +137,7 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
 {
     dev_ID id = ((callback_args*)argument)->id;
     Device* dev_ptr = ((callback_args*)argument)->dev_ptr;
-    dbg_printf("\033[32m[INFO]\033[0m [dev_ID %d] [Time: %d %d] [Caplen: %d] [Len: %d]\n", id,
+    dbg_printf("\033[32m[INFO]\033[0m [my_pcap_callback] [dev_ID %d] [Time: %d %d] [Caplen: %d] [Len: %d]\n", id,
         (int)packet_header->ts.tv_sec, (int)packet_header->ts.tv_usec,
         packet_header->caplen, packet_header->len);
     if (packet_header->caplen != packet_header->len) {
