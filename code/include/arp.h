@@ -5,7 +5,7 @@
 #include "ip.h"
 
 namespace arp {
-extern std::map<const ip_addr, const std::string, compare_ip> arp_map;
+extern std::map<const ip_addr, std::string, compare_ip> arp_map;
 extern std::mutex condition_mutex;
 extern uint8_t cond;
 std::string findMAC(Device* dev_ptr, ip_addr target_ip);

@@ -1,7 +1,7 @@
 #include "arp.h"
 
 namespace arp {
-std::map<const ip_addr, const std::string, compare_ip> arp_map;
+std::map<const ip_addr, std::string, compare_ip> arp_map;
 std::mutex condition_mutex;
 uint8_t cond;
 }
@@ -112,7 +112,7 @@ void arp::handleARPReply(const void* buf, int len, std::string& targetMAC)
     }
     // assert(arp_map.find(targetIP) == arp_map.end());
     condition_mutex.lock();
-    arp_map.insert(std::make_pair(targetIP, targetMAC));
+    arp_map[targetIP] = targetMAC;
     cond = 0;
     condition_mutex.unlock();
 }
