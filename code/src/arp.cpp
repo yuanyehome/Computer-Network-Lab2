@@ -8,6 +8,8 @@ uint8_t cond;
 std::string arp::findMAC(Device* dev_ptr, ip_addr target_ip)
 {
     if (arp_map.find(target_ip) != arp_map.end()) {
+        dbg_printf("\033[32m[INFO]\033[0m [I have found mac] [sendARPRequest] [targetIP: %s] [device_name: %s] [MAC: %s]",
+            IPtoStr(target_ip).c_str(), dev_ptr->name.c_str(), arp_map.at(target_ip).c_str());
         return arp_map.at(target_ip);
     } else {
         sendARPRequest(dev_ptr, target_ip);
