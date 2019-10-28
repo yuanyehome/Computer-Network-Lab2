@@ -11,6 +11,8 @@ std::string arp::findMAC(Device* dev_ptr, ip_addr target_ip)
         return arp_map.at(target_ip);
     } else {
         sendARPRequest(dev_ptr, target_ip);
+        dbg_printf("\033[32m[INFO]\033[0m [arp::findMAC] [sendARPRequest] [targetIP: %s] [device_name: %s]",
+                    IPtoStr(target_ip).c_str(), dev_ptr->name.c_str()));
         double time_variable = 0;
         int retry = 0;
         cond = 1;
