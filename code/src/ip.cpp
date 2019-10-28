@@ -11,11 +11,12 @@ IPPacketReceiveCallback IPCallback;
 int IP::myIPCallback(const void* buf, const int len)
 {
     try {
-        packet* pckt = (packet*)buf;
+        packet pckt;
+        pckt.header = *(ip*)buf;
         dbg_printf("\033[32m[INFO]\033[0m [myIPCallback] [srcIP: %s] [dstIP: %s]\n",
-            IPtoStr(pckt->header.ip_src).c_str(), IPtoStr(pckt->header.ip_dst).c_str());
-        pckt->change_back();
-        pckt->payload = (u_char*)buf + 20;
+            IPtoStr(pckt.header.ip_src).c_str(), IPtoStr(pckt.header.ip_dst).c_str());
+        pckt.change_back();
+        pckt.payload = (u_char*)buf + 20;
     } catch (const char* err_msg) {
         dbg_printf("\033[31m[ERROR]\033[0m [myIPCallback] %s", err_msg);
         return -1;
