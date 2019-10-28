@@ -168,6 +168,7 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
     if (header->ether_type == ETHERTYPE_ARP) {
         // ARP Related
         arp::arpPacket pckt(packet_content + 14);
+        dbg_printf("\033[33m[INFO]\033[0m [ARP_OP: %d]", pckt.header.ar_op);
         if (pckt.header.ar_op == ARPOP_REQUEST) {
             arp::handleARPRequest(dev_ptr, pckt);
         } else if (pckt.header.ar_op == ARPOP_REPLY) {
