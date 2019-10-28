@@ -57,7 +57,8 @@ int sendIPPacket(DeviceManager mgr,
     const void* buf,
     int len)
 {
-    dbg_printf("\033[32m[INFO]\033[0m [srcIP: %s] [dstIP: %s]", IPtoStr(src).c_str(), IPtoStr(dest).c_str());
+    dbg_printf("\033[32m[INFO]\033[0m [sendIPPacket] [srcIP: %s] [dstIP: %s]\n",
+        IPtoStr(src).c_str(), IPtoStr(dest).c_str());
     auto dev_ptr = mgr.findDevice(src);
     if (!dev_ptr) {
         dbg_printf("\033[31m[ERROR]\033[0m srcIP not found in this machine, please check your IP");
@@ -66,7 +67,8 @@ int sendIPPacket(DeviceManager mgr,
     auto srcMac = dev_ptr->mac;
     std::string dstMAC;
     if (in_same_subnet(src, dest, dev_ptr->subnetMask)) {
-        dbg_printf("\033[32m[INFO]\033[0m [is_same_subnet] [srcIP: %s] [dstIP: %s]", IPtoStr(src).c_str(), IPtoStr(dest).c_str());
+        dbg_printf("\033[32m[INFO]\033[0m [is_same_subnet] [srcIP: %s] [dstIP: %s]\n",
+            IPtoStr(src).c_str(), IPtoStr(dest).c_str());
         try {
             dstMAC = arp::findMAC(dev_ptr, dest);
         } catch (const char* err_msg) {
