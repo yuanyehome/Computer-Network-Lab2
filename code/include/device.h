@@ -2,7 +2,6 @@
 #define DEVICE_H_
 
 #include "DEBUG.h"
-#include "ip.h"
 
 void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
     const u_char* packet_content);
