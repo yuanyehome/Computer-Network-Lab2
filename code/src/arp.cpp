@@ -11,11 +11,11 @@ std::string arp::findMAC(Device* dev_ptr, ip_addr target_ip)
         return arp_map.at(target_ip);
     } else {
         sendARPRequest(dev_ptr, target_ip);
-        int time_variable = 0;
+        double time_variable = 0;
         int retry = 0;
         cond = 1;
         while (1) {
-            sleep(0.1);
+            usleep(100000);
             condition_mutex.lock();
             if (cond == 0) {
                 if (arp_map.find(target_ip) != arp_map.end()) {
