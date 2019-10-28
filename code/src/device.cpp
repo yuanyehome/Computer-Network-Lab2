@@ -163,8 +163,10 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
     std::pair<std::string, std::string> res = genMAC(header);
     dstMAC = res.first;
     srcMAC = res.second;
-    if ((srcMAC == dev_ptr->mac) || ((dstMAC != dev_ptr->mac) && dstMAC != "FF:FF:FF:FF:FF:FF"))
+    if ((srcMAC == dev_ptr->mac) || ((dstMAC != dev_ptr->mac) && dstMAC != "FF:FF:FF:FF:FF:FF")) {
+        dbg_printf("\033[32m[INFO]\033[0m [dropped packet]");
         return;
+    }
     if (header->ether_type == ETHERTYPE_ARP) {
         // ARP Related
         arp::arpPacket pckt(packet_content + 14);
