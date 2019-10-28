@@ -167,7 +167,6 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
         dbg_printf("\033[32m[INFO]\033[0m [dropped packet]\n");
         return;
     }
-    dbg_printf("\033[31m??????\033[0m\n");
     if (header->ether_type == ETHERTYPE_ARP) {
         // ARP Related
         arp::arpPacket pckt(packet_content + 14);
