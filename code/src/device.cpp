@@ -157,7 +157,7 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
         header->ether_shost[3], header->ether_shost[4], header->ether_shost[5],
         header->ether_type);
     if (header->ether_type == ETHERTYPE_ARP) {
-        dbg_printf("\033[33m[Special INFO][This is an ARP frame]\n");
+        dbg_printf("\033[33m[Special INFO][This is an ARP frame]\033[0m\n");
     }
     std::string dstMAC, srcMAC;
     std::pair<std::string, std::string> res = genMAC(header);

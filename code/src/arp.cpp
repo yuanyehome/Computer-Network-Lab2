@@ -77,6 +77,7 @@ void arp::sendARPRequest(Device* dev_ptr, ip_addr target_ip)
 
 void arp::handleARPRequest(Device* dev_ptr, arpPacket& pckt)
 {
+    dbg_printf("\033[32m[INFO]\033[0m [handleARPRequest]");
     if (pckt.dstIP.s_addr != dev_ptr->dev_ip.s_addr)
         return;
     else {
