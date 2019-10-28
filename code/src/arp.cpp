@@ -108,7 +108,7 @@ void arp::handleARPReply(const void* buf, int len, std::string& targetMAC)
         sleep(1000);
     } else {
         dbg_printf("%s\n", inet_ntoa(targetIP));
-        dbg_printf("%s\n", arp_map.at(targetIP));
+        dbg_printf("%s\n", arp_map.at(targetIP).c_str());
         sleep(1000);
     }
     // assert(arp_map.find(targetIP) == arp_map.end());
