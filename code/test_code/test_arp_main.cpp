@@ -26,8 +26,12 @@ int main()
     }
 
     while (1) {
-        
-        IP::sendIPPacket(manager, )
+        // 10.100.1.1; 10.100.1.2
+        ip_addr src, dst;
+        inet_aton("10.100.1.1", &src);
+        inet_aton("10.100.1.2", &dst);
+        u_char buf[6] = "hello";
+        sendIPPacket(manager, src, dst, IPPROTO_UDP, buf, 6);
         sleep(10);
     }
 
