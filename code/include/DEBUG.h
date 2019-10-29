@@ -33,7 +33,7 @@
 #define dbg_printf(...)
 #endif
 typedef in_addr ip_addr;
-typedef int (*IPPacketReceiveCallback)(const void *buf, int len);
+typedef int (*IPPacketReceiveCallback)(const void* buf, int len);
 typedef int dev_ID;
-typedef int (*frameReceiveCallback)(const void *, int);
+typedef int (*frameReceiveCallback)(const void*, int);
 typedef int distance;
