@@ -88,7 +88,7 @@ void Router::sendTable(const Device* dev_ptr)
     int single_size = sizeof(Router::itemPacket);
     dbg_printf("\033[33m[DEBUG]\033[0m [cnt: %d] [single_size: %d] [total_size: %d]\n",
         cnt, single_size, total_size);
-    u_char content[total_size + 1];
+    u_char content[total_size];
     auto iter = Router::router_mgr.routetable.begin();
     for (int i = 0; i < cnt; ++i) {
         Router::itemPacket tmp_pckt;
@@ -96,7 +96,7 @@ void Router::sendTable(const Device* dev_ptr)
         tmp_pckt.ip_prefix.s_addr = iter->ip_prefix.s_addr;
         tmp_pckt.subnetMask.s_addr = iter->subnetMask.s_addr;
         strToMac(iter->netx_hop, tmp_pckt.next_mac);
-        memcpy((u_char*)(content + cnt * single_size), (u_char*)&tmp_pckt, single_size);
+        memcpy((u_char*)(content + i * single_size), (u_char*)&tmp_pckt, single_size);
         ++iter;
     }
     uint8_t dstMac[6] = { 255, 255, 255, 255, 255, 255 };
