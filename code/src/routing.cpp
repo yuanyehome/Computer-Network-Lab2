@@ -84,9 +84,10 @@ void Router::sendTable(const Device* dev_ptr)
     table_mutex.lock();
     dbg_printf("\033[32m[INFO]\033[0m [sendTable Function]\n");
     int cnt = Router::router_mgr.routetable.size();
-    dbg_printf("\033[33m[DEBUG]\033[0m [cnt: %d]\n", cnt);
     int total_size = cnt * sizeof(Router::itemPacket);
     int single_size = sizeof(Router::itemPacket);
+    dbg_printf("\033[33m[DEBUG]\033[0m [cnt: %d] [single_size: %d] [total_size: %d]\n",
+        cnt, single_size, total_size);
     u_char content[total_size];
     auto iter = Router::router_mgr.routetable.begin();
     for (int i = 0; i < cnt; ++i) {
