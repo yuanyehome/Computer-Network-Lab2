@@ -37,7 +37,7 @@ struct router {
     void reset();
     void printTable();
     void deleteTableItem(const std::string& mac);
-    router(); // 启动一个监听线程，监听邻居是否在线
+    void initializeTable(DeviceManager& dev_mgr);
     ~router();
 };
 void sendTable(const Device* dev_ptr);

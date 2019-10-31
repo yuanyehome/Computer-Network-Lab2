@@ -64,8 +64,24 @@ void Router::router::deleteTableItem(const std::string& mac)
     }
 }
 
+void Router::router::initializeTable(DeviceManager& dev_mgr)
+{
+    dbg_printf("\033[32m[INFO]\033[0m [route table initializing]\n");
+    for (auto& dev_ptr : dev_mgr.device_list) {
+        ip_addr tmp_ip_prefix;
+        tmp_ip_prefix.s_addr = dev_ptr->dev_ip.s_addr & dev_ptr->subnetMask.s_addr;
+        ip_addr tmp_mask;
+        tmp_mask.s_addr = dev_ptr->subnetMask.s_addr;
+        for (auto& dev_ptr2 : dev_mgr.device_list) {
+            setRoutingTable(tmp_ip_prefix, tmp_mask, dev_ptr2->mac, dev_ptr2, 0);
+        }
+    }
+    t = std::thread(myListenFunc);
+}
+
 void Router::sendTable(const Device* dev_ptr)
 {
+    table_mutex.lock();
     dbg_printf("\033[32m[INFO]\033[0m [sendTable Function]\n");
     int cnt = Router::router_mgr.routetable.size();
     int total_size = cnt * sizeof(Router::itemPacket);
@@ -84,6 +100,7 @@ void Router::sendTable(const Device* dev_ptr)
     uint8_t dstMac[6] = { 255, 255, 255, 255, 255, 255 };
     dev_ptr->sendFrame((void*)content, total_size, MY_ROUTE_PROTO, (void*)dstMac);
     sleep(ROUTE_INTERVAL);
+    table_mutex.unlock();
 } // 序列化
 
 bool Router::routerItem::contain_ip(const ip_addr& dst_ip) const
@@ -98,11 +115,6 @@ bool Router::routerItem::operator<(const routerItem& item) const
         return false;
     else
         return (ip_prefix.s_addr < item.ip_prefix.s_addr);
-}
-Router::router::router()
-{
-    dbg_printf("\033[32m[INFO]\033[0m router initializing, creating a new thread for listening\n");
-    t = std::thread(myListenFunc);
 }
 Router::router::~router() { t.join(); }
 
@@ -151,7 +163,7 @@ void Router::router::handleReceiveRouteTable(const std::string& srcMac, const u_
         ip_addr tmp_mask = neighbor_table[i].subnetMask;
         bool is_find = 0;
         routerItem tmp_item(neighbor_table[i].ip_prefix, neighbor_table[i].subnetMask, dev_ptr,
-            MacToString(neighbor_table[i].next_mac), neighbor_table[i].dist);
+            srcMac, neighbor_table[i].dist);
         for (auto iter = routetable.begin(); iter != routetable.end(); ++iter) {
             if (iter->ip_prefix.s_addr == tmp_ip_prefix.s_addr
                 && iter->subnetMask.s_addr == tmp_mask.s_addr) {
