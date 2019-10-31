@@ -24,13 +24,16 @@ struct routerItem {
 struct router {
     std::set<routerItem> routetable;
     std::map<std::string, bool> neighbor_mac;
+    std::string get_nexthop_mac(const ip_addr& dstIP);
+    std::thread t;
+    void handleReceiveRouteTable(const std::string& srcMac, const u_char* content, const int len);
     int setRoutingTable(const ip_addr dest, const ip_addr mask,
         const std::string& nextHopMAC, Device* device, const int dist);
-    std::string get_nexthop_mac(const ip_addr& dstIP);
-    void handleReceiveRouteTable(const std::string& srcMac, const u_char* content, const int len);
-    router(std::set<routerItem> _routetable)
-        : routetable(_routetable){}; // 可以加邻居
+    void check();
+    void reset();
+    void deleteTableItem(const std::string& mac);
     router(); // 启动一个监听线程，监听邻居是否在线
+    ~router();
 };
 extern router router_mgr;
 }
