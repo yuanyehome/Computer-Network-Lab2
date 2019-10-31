@@ -95,7 +95,7 @@ void Router::sendTable(const Device* dev_ptr)
         tmp_pckt.ip_prefix.s_addr = iter->ip_prefix.s_addr;
         tmp_pckt.subnetMask.s_addr = iter->subnetMask.s_addr;
         strToMac(iter->netx_hop, tmp_pckt.next_mac);
-        memcpy(content + cnt * single_size, (u_char*)&tmp_pckt, single_size);
+        memcpy((u_char*)(content + cnt * single_size), (u_char*)&tmp_pckt, single_size);
         ++iter;
     }
     uint8_t dstMac[6] = { 255, 255, 255, 255, 255, 255 };
