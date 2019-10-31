@@ -50,7 +50,24 @@ void Router::router::deleteTableItem(const std::string& mac)
 void Router::sendTable(const Device* dev_ptr)
 {
     dbg_printf("\033[32m[INFO]\033[0m [sendTable Function]\n");
-}
+    int cnt = Router::router_mgr.routetable.size();
+    int total_size = cnt * sizeof(Router::itemPacket);
+    int single_size = sizeof(Router::itemPacket);
+    u_char content[total_size];
+    auto iter = Router::router_mgr.routetable.begin();
+    for (int i = 0; i < cnt; ++i) {
+        Router::itemPacket tmp_pckt;
+        tmp_pckt.dist = iter->dist;
+        tmp_pckt.ip_prefix.s_addr = iter->ip_prefix.s_addr;
+        tmp_pckt.subnetMask.s_addr = iter->subnetMask.s_addr;
+        strToMac(iter->netx_hop, tmp_pckt.next_mac);
+        memcpy(content + cnt * single_size, (u_char*)&tmp_pckt, single_size);
+        ++iter;
+    }
+    uint8_t dstMac[6] = { 255, 255, 255, 255, 255, 255 };
+    dev_ptr->sendFrame((void*)content, total_size, MY_ROUTE_PROTO, (void*)dstMac);
+    sleep(ROUTE_INTERVAL);
+} // 序列化
 
 bool Router::routerItem::contain_ip(const ip_addr& dst_ip) const
 {
@@ -99,4 +116,4 @@ int Router::router::setRoutingTable(const ip_addr dest, const ip_addr mask,
 void Router::router::handleReceiveRouteTable(const std::string& srcMac, const u_char* content, const int len)
 {
     dbg_printf("\033[32m[INFO]\033[0m [handleReceiveRouteTable]\n");
-}
+} // 反序列化；合并路由表

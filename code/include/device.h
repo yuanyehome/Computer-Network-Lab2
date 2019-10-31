@@ -48,7 +48,7 @@ struct Device {
    * @param ethtype type of eth, don't forget the byte order
    * @param destmac destination
    */
-    int sendFrame(const void* buf, int len, int ethtype, const void* destmac);
+    int sendFrame(const void* buf, int len, int ethtype, const void* destmac) const;
 };
 
 struct DeviceManager {

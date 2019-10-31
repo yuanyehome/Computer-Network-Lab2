@@ -37,7 +37,7 @@ void strToMac(const std::string& mac, u_char* buf)
  * @see addDevice
  */
 int Device::sendFrame(const void* buf, int len, int ethtype,
-    const void* destmac)
+    const void* destmac) const
 {
     dbg_printf("\n[Function: sendFrame]***************\n");
     size_t size = len + 2 * ETHER_ADDR_LEN + ETHER_TYPE_LEN + ETHER_CRC_LEN;

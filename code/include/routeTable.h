@@ -6,10 +6,18 @@
 #include "ip.h"
 
 namespace Router {
+struct itemPacket {
+    struct __attribute__((__packed__)) {
+        ip_addr ip_prefix;
+        ip_addr subnetMask;
+        u_char next_mac[6];
+        distance dist;
+    };
+};
 struct routerItem {
     ip_addr ip_prefix;
     ip_addr subnetMask;
-    Device* dev_ptr;
+    Device* dev_ptr; // 要经由哪个device发出去
     std::string netx_hop;
     distance dist;
     routerItem(const ip_addr& ip_prefix_, const ip_addr& subnetMask_, Device* dev_ptr_, const std::string& next_hop_, const int _dist)
