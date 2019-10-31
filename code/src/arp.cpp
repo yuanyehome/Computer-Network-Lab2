@@ -3,7 +3,7 @@
 namespace arp {
 std::map<const ip_addr, std::string, compare_ip> arp_map;
 std::mutex condition_mutex;
-uint8_t cond;
+std::map<std::string, uint8_t> cond;
 }
 std::string arp::findMAC(Device* dev_ptr, ip_addr target_ip)
 {
@@ -19,7 +19,7 @@ std::string arp::findMAC(Device* dev_ptr, ip_addr target_ip)
             IPtoStr(target_ip).c_str(), dev_ptr->name.c_str());
         double time_variable = 0;
         int retry = 0;
-        cond = 1;
+        cond[dev_ptr->mac] = 1;
         int cnt = 0;
         dbg_printf("start looping\n");
         while (1) {
@@ -27,13 +27,13 @@ std::string arp::findMAC(Device* dev_ptr, ip_addr target_ip)
             usleep(100000); // 0.1s
             if (cnt == 10)
                 dbg_printf("looping [cond: %d]\n", cond);
-            if (cond == 0) {
+            if (cond[dev_ptr->mac] == 0) {
                 condition_mutex.lock();
                 if (arp_map.find(target_ip) != arp_map.end()) {
                     condition_mutex.unlock();
                     return arp_map.at(target_ip);
                 } else {
-                    cond = 1;
+                    cond[dev_ptr->mac] = 1;
                     condition_mutex.unlock();
                 }
             }
@@ -47,18 +47,18 @@ std::string arp::findMAC(Device* dev_ptr, ip_addr target_ip)
             }
             if (retry > MAX_ARP_RETRY) {
                 condition_mutex.lock();
-                if (cond == 0) {
+                if (cond[dev_ptr->mac] == 0) {
                     if (arp_map.find(target_ip) != arp_map.end()) {
                         condition_mutex.unlock();
                         return arp_map.at(target_ip);
                     } else {
-                        cond = 1;
+                        cond[dev_ptr->mac] = 1;
                         condition_mutex.unlock();
                     }
                 } else {
                     dbg_printf("\033[31m[ERROR]\033[0m [ARP failed] [targetIP: %s] [device_name: %s]\n",
                         IPtoStr(target_ip).c_str(), dev_ptr->name.c_str());
-                    cond = 0;
+                    cond[dev_ptr->mac] = 0;
                     condition_mutex.unlock();
                 }
                 throw "findARP failed! Please check your IP and network connection";
@@ -113,13 +113,13 @@ void arp::handleARPReply(const void* buf, int len, std::string& targetMAC)
     if (arp_map.find(targetIP) == arp_map.end()) {
         dbg_printf("assert success\n");
     } else {
+        dbg_printf("assert fail\n");
         dbg_printf("%s\n", inet_ntoa(targetIP));
         dbg_printf("%s\n", arp_map.at(targetIP).c_str());
     }
-    // assert(arp_map.find(targetIP) == arp_map.end());
     condition_mutex.lock();
     arp_map[targetIP] = targetMAC;
-    cond = 0;
+    cond[MacToString(pckt.dstMac)] = 0;
     condition_mutex.unlock();
 }
 

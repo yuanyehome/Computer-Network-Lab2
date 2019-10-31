@@ -12,19 +12,25 @@ struct routerItem {
     Device* dev_ptr;
     std::string netx_hop;
     distance dist;
-    routerItem(const ip_addr& ip_prefix_, const ip_addr& subnetMask_, Device* dev_ptr_, const std::string& next_hop_)
+    routerItem(const ip_addr& ip_prefix_, const ip_addr& subnetMask_, Device* dev_ptr_, const std::string& next_hop_, const int _dist)
         : ip_prefix(ip_prefix_)
         , subnetMask(subnetMask_)
         , dev_ptr(dev_ptr_)
-        , netx_hop(next_hop_){};
+        , netx_hop(next_hop_)
+        , dist(_dist){};
     bool contain_ip(const ip_addr& dst_ip) const;
     bool operator<(routerItem item);
 };
 struct router {
     std::set<routerItem> routetable;
+    std::map<std::string, bool> neighbor_mac;
     int setRoutingTable(const ip_addr dest, const ip_addr mask,
-        const std::string& nextHopMAC, Device* device);
+        const std::string& nextHopMAC, Device* device, const int dist);
     std::string get_nexthop_mac(const ip_addr& dstIP);
+    void handleReceiveRouteTable(const std::string& srcMac, const u_char* content, const int len);
+    router(std::set<routerItem> _routetable)
+        : routetable(_routetable){}; // 可以加邻居
+    router(); // 启动一个监听线程，监听邻居是否在线
 };
 extern router router_mgr;
 }

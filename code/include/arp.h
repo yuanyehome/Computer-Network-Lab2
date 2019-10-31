@@ -7,7 +7,7 @@
 namespace arp {
 extern std::map<const ip_addr, std::string, compare_ip> arp_map;
 extern std::mutex condition_mutex;
-extern uint8_t cond;
+extern std::map<std::string, uint8_t> cond;
 std::string findMAC(Device* dev_ptr, ip_addr target_ip);
 void sendARPRequest(Device* dev_ptr, ip_addr target_ip);
 void handleARPReply(const void* buf, int len, std::string& targetMAC);

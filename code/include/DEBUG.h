@@ -24,6 +24,9 @@
 
 #define MAX_ARP_WATING_TIME 2
 #define MAX_ARP_RETRY 3
+#define MY_ROUTE_PROTO 0xffff
+#define ROUTE_OFFLINE_TIME 5
+#define ROUTE_INTERVAL 2
 
 #define DEBUG
 #ifdef DEBUG
