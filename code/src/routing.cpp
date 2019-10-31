@@ -99,8 +99,8 @@ void Router::sendTable(const Device* dev_ptr)
     }
     uint8_t dstMac[6] = { 255, 255, 255, 255, 255, 255 };
     dev_ptr->sendFrame((void*)content, total_size, MY_ROUTE_PROTO, (void*)dstMac);
-    sleep(ROUTE_INTERVAL);
     table_mutex.unlock();
+    sleep(ROUTE_INTERVAL);
 } // 序列化
 
 bool Router::routerItem::contain_ip(const ip_addr& dst_ip) const
