@@ -16,12 +16,14 @@ Router::routerItem::routerItem(const ip_addr& ip_prefix_, const ip_addr& subnetM
 
 void myListenFunc()
 {
-    Router::table_mutex.lock();
-    Router::router_mgr.printTable();
-    Router::router_mgr.check();
-    Router::router_mgr.reset();
-    Router::table_mutex.unlock();
-    sleep(ROUTE_OFFLINE_TIME);
+    while (1) {
+        Router::table_mutex.lock();
+        Router::router_mgr.printTable();
+        Router::router_mgr.check();
+        Router::router_mgr.reset();
+        Router::table_mutex.unlock();
+        sleep(ROUTE_OFFLINE_TIME);
+    }
 }
 
 void Router::router::printTable()
@@ -81,28 +83,30 @@ void Router::router::initializeTable(DeviceManager& dev_mgr)
 
 void Router::sendTable(const Device* dev_ptr)
 {
-    table_mutex.lock();
-    dbg_printf("\033[32m[INFO]\033[0m [sendTable Function]\n");
-    int cnt = Router::router_mgr.routetable.size();
-    int total_size = cnt * sizeof(Router::itemPacket);
-    int single_size = sizeof(Router::itemPacket);
-    dbg_printf("\033[33m[DEBUG]\033[0m [cnt: %d] [single_size: %d] [total_size: %d]\n",
-        cnt, single_size, total_size);
-    u_char content[total_size];
-    auto iter = Router::router_mgr.routetable.begin();
-    for (int i = 0; i < cnt; ++i) {
-        Router::itemPacket tmp_pckt;
-        tmp_pckt.dist = iter->dist;
-        tmp_pckt.ip_prefix.s_addr = iter->ip_prefix.s_addr;
-        tmp_pckt.subnetMask.s_addr = iter->subnetMask.s_addr;
-        strToMac(iter->netx_hop, tmp_pckt.next_mac);
-        memcpy((u_char*)(content + i * single_size), (u_char*)&tmp_pckt, single_size);
-        ++iter;
+    while (1) {
+        table_mutex.lock();
+        dbg_printf("\033[32m[INFO]\033[0m [sendTable Function]\n");
+        int cnt = Router::router_mgr.routetable.size();
+        int total_size = cnt * sizeof(Router::itemPacket);
+        int single_size = sizeof(Router::itemPacket);
+        dbg_printf("\033[33m[DEBUG]\033[0m [cnt: %d] [single_size: %d] [total_size: %d]\n",
+            cnt, single_size, total_size);
+        u_char content[total_size];
+        auto iter = Router::router_mgr.routetable.begin();
+        for (int i = 0; i < cnt; ++i) {
+            Router::itemPacket tmp_pckt;
+            tmp_pckt.dist = iter->dist;
+            tmp_pckt.ip_prefix.s_addr = iter->ip_prefix.s_addr;
+            tmp_pckt.subnetMask.s_addr = iter->subnetMask.s_addr;
+            strToMac(iter->netx_hop, tmp_pckt.next_mac);
+            memcpy((u_char*)(content + i * single_size), (u_char*)&tmp_pckt, single_size);
+            ++iter;
+        }
+        uint8_t dstMac[6] = { 255, 255, 255, 255, 255, 255 };
+        dev_ptr->sendFrame((void*)content, total_size, MY_ROUTE_PROTO, (void*)dstMac);
+        table_mutex.unlock();
+        sleep(ROUTE_INTERVAL);
     }
-    uint8_t dstMac[6] = { 255, 255, 255, 255, 255, 255 };
-    dev_ptr->sendFrame((void*)content, total_size, MY_ROUTE_PROTO, (void*)dstMac);
-    table_mutex.unlock();
-    sleep(ROUTE_INTERVAL);
 } // 序列化
 
 bool Router::routerItem::contain_ip(const ip_addr& dst_ip) const
