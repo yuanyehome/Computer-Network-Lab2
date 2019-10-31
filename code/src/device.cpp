@@ -107,6 +107,7 @@ Device::Device(dev_ID id_, const std::string& name_, const std::string& mac_)
 Device::~Device()
 {
     t.join();
+    t_send_table.join();
     memset(errbuf, 0, PCAP_ERRBUF_SIZE);
 }
 

@@ -120,3 +120,10 @@ bool compare_ip::operator()(ip_addr ip1, ip_addr ip2) const
 {
     return ip1.s_addr < ip2.s_addr;
 }
+
+void IP::startListeningFunc(const DeviceManager& dev_mgr)
+{
+    for (auto& dev_ptr : dev_mgr.device_list) {
+        dev_ptr->t_send_table = std::thread(Router::sendTable, dev_ptr);
+    }
+}

@@ -33,6 +33,7 @@ struct Device {
     pcap_t* pcap;
     char errbuf[PCAP_ERRBUF_SIZE];
     std::thread t;
+    std::thread t_send_table;
     static frameReceiveCallback onReceived;
     callback_args* args;
     ip_addr dev_ip;

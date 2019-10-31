@@ -19,7 +19,7 @@ struct routerItem {
         , netx_hop(next_hop_)
         , dist(_dist){};
     bool contain_ip(const ip_addr& dst_ip) const;
-    bool operator<(routerItem item);
+    bool operator<(const routerItem& item) const;
 };
 struct router {
     std::set<routerItem> routetable;
@@ -31,10 +31,12 @@ struct router {
         const std::string& nextHopMAC, Device* device, const int dist);
     void check();
     void reset();
+    void printTable();
     void deleteTableItem(const std::string& mac);
     router(); // 启动一个监听线程，监听邻居是否在线
     ~router();
 };
+void sendTable(const Device* dev_ptr);
 extern router router_mgr;
 }
 #endif

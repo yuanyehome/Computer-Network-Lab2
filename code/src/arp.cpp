@@ -26,7 +26,7 @@ std::string arp::findMAC(Device* dev_ptr, ip_addr target_ip)
             cnt += 1;
             usleep(100000); // 0.1s
             if (cnt == 10)
-                dbg_printf("looping [cond: %d]\n", cond);
+                dbg_printf("looping [cond: %d]\n", cond[dev_ptr->mac]);
             if (cond[dev_ptr->mac] == 0) {
                 condition_mutex.lock();
                 if (arp_map.find(target_ip) != arp_map.end()) {

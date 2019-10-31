@@ -6,9 +6,16 @@ router router_mgr;
 
 void myListenFunc()
 {
+    Router::router_mgr.printTable();
     Router::router_mgr.check();
     sleep(ROUTE_OFFLINE_TIME);
     Router::router_mgr.reset();
+}
+
+void Router::router::printTable()
+{
+    dbg_printf("\033[32m[INFO]\033[0m [Print Routing Table]\n");
+    // 待完成
 }
 
 void Router::router::check()
@@ -40,11 +47,16 @@ void Router::router::deleteTableItem(const std::string& mac)
     }
 }
 
+void Router::sendTable(const Device* dev_ptr)
+{
+    dbg_printf("\033[32m[INFO]\033[0m [sendTable Function]\n");
+}
+
 bool Router::routerItem::contain_ip(const ip_addr& dst_ip) const
 {
     return ((dst_ip.s_addr & subnetMask.s_addr) == ip_prefix.s_addr);
 }
-bool Router::routerItem::operator<(routerItem item)
+bool Router::routerItem::operator<(const routerItem& item) const
 {
     if (subnetMask.s_addr < item.subnetMask.s_addr)
         return true;
@@ -82,4 +94,9 @@ int Router::router::setRoutingTable(const ip_addr dest, const ip_addr mask,
         return -1;
     }
     return 0;
+}
+
+void Router::router::handleReceiveRouteTable(const std::string& srcMac, const u_char* content, const int len)
+{
+    dbg_printf("\033[32m[INFO]\033[0m [handleReceiveRouteTable]\n");
 }

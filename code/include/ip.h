@@ -5,6 +5,7 @@
 
 namespace IP {
 extern IPPacketReceiveCallback IPCallback;
+void startListeningFunc(const DeviceManager& dev_mgr);
 int setIPPacketReceiveCallback(IPPacketReceiveCallback callback);
 int setRoutingTable(const struct in_addr dest, const struct in_addr mask,
     const void* nextHopMAC, const char* device);
