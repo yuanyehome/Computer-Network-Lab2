@@ -182,7 +182,7 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
         }
     } else if (header->ether_type == MY_ROUTE_PROTO) {
         memcpy(content, packet_content + 14, size);
-        Router::router_mgr.handleReceiveRouteTable(srcMAC, content, size);
+        Router::router_mgr.handleReceiveRouteTable(srcMAC, content, size, dev_ptr);
     } else {
         if (header->ether_type == ETHERTYPE_IPV6) {
             dbg_printf("\033[31m[WARNING]\033[0m [unsupported ether_type ipv6]\n");

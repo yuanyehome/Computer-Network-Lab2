@@ -6,6 +6,7 @@
 #include "ip.h"
 
 namespace Router {
+extern std::mutex table_mutex;
 struct itemPacket {
     struct __attribute__((__packed__)) {
         ip_addr ip_prefix;
@@ -20,12 +21,7 @@ struct routerItem {
     Device* dev_ptr; // 要经由哪个device发出去
     std::string netx_hop;
     distance dist;
-    routerItem(const ip_addr& ip_prefix_, const ip_addr& subnetMask_, Device* dev_ptr_, const std::string& next_hop_, const int _dist)
-        : ip_prefix(ip_prefix_)
-        , subnetMask(subnetMask_)
-        , dev_ptr(dev_ptr_)
-        , netx_hop(next_hop_)
-        , dist(_dist){};
+    routerItem(const ip_addr& ip_prefix_, const ip_addr& subnetMask_, Device* dev_ptr_, const std::string& next_hop_, const int _dist);
     bool contain_ip(const ip_addr& dst_ip) const;
     bool operator<(const routerItem& item) const;
 };
@@ -34,7 +30,7 @@ struct router {
     std::map<std::string, bool> neighbor_mac;
     std::string get_nexthop_mac(const ip_addr& dstIP);
     std::thread t;
-    void handleReceiveRouteTable(const std::string& srcMac, const u_char* content, const int len);
+    void handleReceiveRouteTable(const std::string& srcMac, const u_char* content, const int len, Device* dev_ptr);
     int setRoutingTable(const ip_addr dest, const ip_addr mask,
         const std::string& nextHopMAC, Device* device, const int dist);
     void check();
