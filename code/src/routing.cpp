@@ -115,5 +115,8 @@ int Router::router::setRoutingTable(const ip_addr dest, const ip_addr mask,
 
 void Router::router::handleReceiveRouteTable(const std::string& srcMac, const u_char* content, const int len)
 {
+    // 加入邻居
+    // 合并路由表
+
     dbg_printf("\033[32m[INFO]\033[0m [handleReceiveRouteTable]\n");
 } // 反序列化；合并路由表

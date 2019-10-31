@@ -126,4 +126,4 @@ void IP::startListeningFunc(const DeviceManager& dev_mgr)
     for (auto& dev_ptr : dev_mgr.device_list) {
         dev_ptr->t_send_table = std::thread(Router::sendTable, dev_ptr);
     }
-}
+} // 需要在main里面手动开开始发包
