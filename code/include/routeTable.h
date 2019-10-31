@@ -12,13 +12,13 @@ struct routerItem {
     Device* dev_ptr;
     std::string netx_hop;
     distance dist;
-    routerItem(ip_addr& ip_prefix_, ip_addr& subnetMask_, Device* dev_ptr_, std::string& next_hop_, distance dist_)
+    routerItem(const ip_addr& ip_prefix_, const ip_addr& subnetMask_, Device* dev_ptr_, const std::string& next_hop_)
         : ip_prefix(ip_prefix_)
         , subnetMask(subnetMask_)
         , dev_ptr(dev_ptr_)
-        , netx_hop(next_hop_)
-        , dist(dist_){};
+        , netx_hop(next_hop_){};
     bool contain_ip(const ip_addr& dst_ip) const;
+    bool operator<(routerItem item);
 };
 struct router {
     std::set<routerItem> routetable;
