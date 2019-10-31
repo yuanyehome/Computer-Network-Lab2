@@ -27,7 +27,7 @@ void myListenFunc()
 void Router::router::printTable()
 {
     dbg_printf("\033[32m[INFO]\033[0m [Print Routing Table]\n");
-    dbg_printf("\033[32m[Neighor]\033[0m");
+    dbg_printf("\033[32m[Neighbor]\033[0m");
     for (auto& item : neighbor_mac) {
         dbg_printf("%s", item.first.c_str());
     }
