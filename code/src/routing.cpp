@@ -19,9 +19,9 @@ void myListenFunc()
     Router::table_mutex.lock();
     Router::router_mgr.printTable();
     Router::router_mgr.check();
-    sleep(ROUTE_OFFLINE_TIME);
     Router::router_mgr.reset();
     Router::table_mutex.unlock();
+    sleep(ROUTE_OFFLINE_TIME);
 }
 
 void Router::router::printTable()
