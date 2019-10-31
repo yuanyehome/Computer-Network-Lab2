@@ -2,3 +2,6 @@
 - This is a project of Lab2 of Computer Network (Honor Class) of Peking University. This lab will let us implement a simple TCP-IP protocol stack and implement socket primitive which can communicate with a real linux machine finally. (At present I wish I can achieve this target).
 - `code` folder contains all the codes used in my own protocol stack, please refer to `README.md` file in `code` folder for more details; `mperf` folder and `vnetUtils` folder(more detail please refer to `Writeup.md` the official tutorial of this Lab)
 - `standard` folder contains some protocal standard which may be referred in the implementation of my protocol.
+- Writing Tasks(Part B):
+  - `About how to get MAC from IP`: I use ARP-like protocol to get MAC from an IP when targetIP is in the same subnet as source device. And use route table to query next-hop when they are not in the same subnet.
+  - `About routing algorithm`: First all hosts initialize themselves by add route table items that correspoding to their devices with distance 0. Every 2 seconds they will send a broadcast contains their route tables. If a neighbor is not listened by one host, it will be seen as offline. When merging the neighborhoods' route tables and its own table, I use methods like distance-vector.
