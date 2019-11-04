@@ -35,6 +35,13 @@ void Router::router::printTable()
     }
     dbg_printf("\n");
     // 待完成
+    dbg_printf("_______________________________________________________________________________\n");
+    dbg_printf("||  src_ip_prefix   ||  src_ip_subnet  ||     via_mac     ||     dst_mac     ||\n");
+    for (auto& item : routetable) {
+        dbg_printf("||%17s||%17s||%17s||%17s||\n", IPtoStr(item.ip_prefix).c_str(), IPtoStr(item.subnetMask).c_str(),
+            item.dev_ptr->mac.c_str(), item.netx_hop.c_str());
+    }
+    dbg_printf("===============================================================================\n");
 }
 
 void Router::router::check()
