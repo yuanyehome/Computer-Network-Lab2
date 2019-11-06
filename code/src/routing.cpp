@@ -83,7 +83,8 @@ void Router::router::initializeTable(DeviceManager& dev_mgr)
         ip_addr tmp_mask;
         tmp_mask.s_addr = dev_ptr->subnetMask.s_addr;
         for (auto& dev_ptr2 : dev_mgr.device_list) {
-            setRoutingTable(tmp_ip_prefix, tmp_mask, dev_ptr2->mac, dev_ptr2, 0);
+            dbg_printf("\033[31m[DEBUG]\033[0m %s", dev_ptr2->mac.c_str());
+            setRoutingTable(tmp_ip_prefix, tmp_mask, "00:00:00:00:00:00", dev_ptr2, 0);
         }
     }
     t = std::thread(myListenFunc);
