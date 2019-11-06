@@ -40,6 +40,7 @@ int IP::myIPCallback(const void* buf, const int len)
 bool IP::findHostIP(ip_addr src)
 {
     for (auto& item : manager.device_list) {
+        dbg_printf("[DEBUG] %s\n", IPtoStr(item->dev_ip).c_str());
         if (src.s_addr == item->dev_ip.s_addr)
             return true;
     }
