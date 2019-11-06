@@ -37,10 +37,10 @@ int IP::myIPCallback(const void* buf, const int len)
     return 0;
 }
 
-bool IP::findHostIP(ip_addr src)
+bool IP::findHostIP(ip_addr& src)
 {
     for (auto& item : manager.device_list) {
-        dbg_printf("[DEBUG] %s\n", IPtoStr(item->dev_ip).c_str());
+        dbg_printf("[DEBUG] %s %s\n", IPtoStr(item->dev_ip).c_str(), (src.s_addr == item->dev_ip.s_addr));
         if (src.s_addr == item->dev_ip.s_addr)
             return true;
     }
