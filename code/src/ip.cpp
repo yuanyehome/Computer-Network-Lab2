@@ -26,7 +26,7 @@ int IP::myIPCallback(const void* buf, const int len)
         }
         dbg_printf("\n");
         if (findHostIP(pckt.header.ip_dst)) {
-            dbg_printf("\033[32m[INFO]\033 This is me! \n");
+            dbg_printf("\033[32m[INFO]\033[0m This is me! \n");
         } else {
             dbg_printf("\033[32m[INFO] [Forwarding]\033[0m\n");
             sendIPPacket(manager, pckt.header.ip_src, pckt.header.ip_dst, IPPROTO_UDP, pckt.payload, len - 20);
