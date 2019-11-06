@@ -41,13 +41,3 @@ dev_ID DeviceManager::findDevice(const std::string& dev_name)
     dbg_printf("\033[31m[ERROR]\033[0m [findDevice] No such device in device_list! \n");
     return -1;
 }
-
-Device* DeviceManager::findDevice(const ip_addr src)
-{
-    for (auto& dev_ptr : device_list) {
-        if (dev_ptr->dev_ip.s_addr == src.s_addr) {
-            return dev_ptr;
-        }
-    }
-    return NULL;
-}

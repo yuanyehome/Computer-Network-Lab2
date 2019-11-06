@@ -196,3 +196,18 @@ void Router::router::handleReceiveRouteTable(const std::string& srcMac, const u_
     dbg_printf("\033[32m[INFO]\033[0m [handleReceiveRouteTable]\n");
     table_mutex.unlock();
 } // 反序列化；合并路由表
+
+Device* DeviceManager::findDevice(const ip_addr src)
+{
+    for (auto& dev_ptr : device_list) {
+        if (dev_ptr->dev_ip.s_addr == src.s_addr) {
+            return dev_ptr;
+        }
+    }
+    for (auto& item : Router::router_mgr.routetable) {
+        if ((src.s_addr & item.subnetMask.s_addr) == item.ip_prefix.s_addr) {
+            return item.dev_ptr;
+        }
+    }
+    return NULL;
+}

@@ -11,7 +11,6 @@ int main()
         return 0;
     }
     pcap_if_t* head = alldevs;
-    DeviceManager manager;
     manager.setFrameReceiveCallback(myOnReceived);
     IP::setIPPacketReceiveCallback(IP::myIPCallback);
     while (head->next != NULL) {

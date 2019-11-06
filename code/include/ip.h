@@ -10,6 +10,7 @@ int setIPPacketReceiveCallback(IPPacketReceiveCallback callback);
 int setRoutingTable(const struct in_addr dest, const struct in_addr mask,
     const void* nextHopMAC, const char* device);
 int myIPCallback(const void* buf, const int len);
+bool findHostIP(ip_addr src);
 struct packet {
     struct __attribute__((__packed__)) {
         ip header;

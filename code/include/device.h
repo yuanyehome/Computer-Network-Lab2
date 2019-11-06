@@ -68,5 +68,6 @@ struct DeviceManager {
     int setFrameReceiveCallback(frameReceiveCallback callback);
     ~DeviceManager();
 };
+extern DeviceManager manager;
 
 #endif

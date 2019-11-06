@@ -7,21 +7,41 @@ namespace IP {
 IPPacketReceiveCallback IPCallback;
 }
 
+DeviceManager manager;
 // buf and len are both a whole IP packet
 int IP::myIPCallback(const void* buf, const int len)
 {
+    // len是包括header的
     try {
         packet pckt;
         pckt.header = *(ip*)buf;
-        dbg_printf("\033[32m[INFO]\033[0m [myIPCallback] [srcIP: %s] [dstIP: %s]\n",
-            IPtoStr(pckt.header.ip_src).c_str(), IPtoStr(pckt.header.ip_dst).c_str());
         pckt.change_back();
         pckt.payload = (u_char*)buf + 20;
+        dbg_printf("\033[32m[INFO]\033[0m [myIPCallback] [srcIP: %s] [dstIP: %s]\n",
+            IPtoStr(pckt.header.ip_src).c_str(), IPtoStr(pckt.header.ip_dst).c_str());
+        if (findHostIP(pckt.header.ip_src)) {
+            dbg_printf("\033[32m[INFO]\033[0m [received an IP packet]\n\033[32m[Content]\033[0m:\n");
+            for (int i = 0; i < len - 20; ++i) {
+                dbg_printf("%02x ", pckt.payload[i]);
+            }
+            dbg_printf("\n");
+        } else {
+            sendIPPacket(manager, pckt.header.ip_src, pckt.header.ip_dst, IPPROTO_UDP, pckt.payload, len - 20);
+        }
     } catch (const char* err_msg) {
         dbg_printf("\033[31m[ERROR]\033[0m [myIPCallback] %s", err_msg);
         return -1;
     }
     return 0;
+}
+
+bool IP::findHostIP(ip_addr src)
+{
+    for (auto& item : manager.device_list) {
+        if (src.s_addr == item->dev_ip.s_addr)
+            return true;
+    }
+    return false;
 }
 
 bool in_same_subnet(ip_addr ip1, ip_addr ip2, ip_addr mask)
