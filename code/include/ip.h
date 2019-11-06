@@ -36,7 +36,7 @@ struct compare_ip {
 };
 
 bool in_same_subnet(ip_addr ip1, ip_addr ip2, ip_addr mask);
-int sendIPPacket(DeviceManager mgr,
+int sendIPPacket(DeviceManager& mgr,
     const struct in_addr src,
     const struct in_addr dest,
     int proto,

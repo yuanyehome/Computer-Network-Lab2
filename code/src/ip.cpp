@@ -75,7 +75,7 @@ std::string IPtoStr(ip_addr IP)
     snprintf(ip, 30, "%d.%d.%d.%d", IP.s_addr & 255, (IP.s_addr >> 8) & 255, (IP.s_addr >> 16) & 255, IP.s_addr >> 24);
     return std::string(ip);
 }
-int sendIPPacket(DeviceManager mgr,
+int sendIPPacket(DeviceManager& mgr,
     const struct in_addr src,
     const struct in_addr dest,
     int proto,
