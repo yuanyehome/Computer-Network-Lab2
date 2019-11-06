@@ -120,7 +120,7 @@ int sendIPPacket(DeviceManager mgr,
     u_char* char_mac = new u_char[6];
     strToMac(dstMAC, char_mac);
     memcpy(IPpacket_final, &pckt.header, pckt.header.ip_hl << 2);
-    memcpy(IPpacket_final, pckt.payload, len);
+    memcpy(IPpacket_final + (pckt.header.ip_hl << 2), pckt.payload, len);
     dbg_printf("\033[32m[INFO]\033[0m [total_len: %d]", total_len);
     dev_ptr->sendFrame(IPpacket_final, total_len, ETHERTYPE_IP, char_mac);
     delete[] char_mac;
