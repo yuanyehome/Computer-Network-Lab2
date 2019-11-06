@@ -5,7 +5,7 @@ typedef int (*frameReceiveCallback)(const void*, int);
 std::string MacToString(const u_char* mac)
 {
     char tmp[30];
-    snprintf(tmp, 30, "%X:%X:%X:%X:%X:%X",
+    snprintf(tmp, 30, "%02X:%02X:%02X:%02X:%02X:%02X",
         mac[0], mac[1], mac[2],
         mac[3], mac[4], mac[5]);
     return std::string(tmp);
@@ -29,7 +29,7 @@ int get_mac(char* mac, int len_limit, const std::string& name)
         freeifaddrs(iflist);
     }
     if (found > 0) {
-        snprintf(mac, len_limit, "%X:%X:%X:%X:%X:%X",
+        snprintf(mac, len_limit, "%02X:%02X:%02X:%02X:%02X:%02X",
             tmp[0], tmp[1], tmp[2],
             tmp[3], tmp[4], tmp[5]);
     }
@@ -48,7 +48,7 @@ int get_mac(char* mac, int len_limit, const std::string& name)
         return -1;
     }
 
-    return snprintf(mac, len_limit, "%X:%X:%X:%X:%X:%X",
+    return snprintf(mac, len_limit, "%02X:%02X:%02X:%02X:%02X:%02X",
         (unsigned char)ifreq.ifr_hwaddr.sa_data[0],
         (unsigned char)ifreq.ifr_hwaddr.sa_data[1],
         (unsigned char)ifreq.ifr_hwaddr.sa_data[2],
@@ -116,14 +116,14 @@ frameReceiveCallback Device::onReceived = myOnReceived;
 std::pair<std::string, std::string> genMAC(const ether_header* header)
 {
     char tmp1[20], tmp2[20] = { 0 };
-    snprintf(tmp1, 20, "%X:%X:%X:%X:%X:%X",
+    snprintf(tmp1, 20, "%02X:%02X:%02X:%02X:%02X:%02X",
         (unsigned char)header->ether_dhost[0],
         (unsigned char)header->ether_dhost[1],
         (unsigned char)header->ether_dhost[2],
         (unsigned char)header->ether_dhost[3],
         (unsigned char)header->ether_dhost[4],
         (unsigned char)header->ether_dhost[5]);
-    snprintf(tmp2, 20, "%X:%X:%X:%X:%X:%X",
+    snprintf(tmp2, 20, "%02X:%02X:%02X:%02X:%02X:%02X",
         (unsigned char)header->ether_shost[0],
         (unsigned char)header->ether_shost[1],
         (unsigned char)header->ether_shost[2],
@@ -151,7 +151,7 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
     memcpy(header, packet_content, 14);
     header->ether_type = ntohs(header->ether_type);
     dbg_printf(
-        "[Dest: %X:%X:%X:%X:%X:%X]\n[Src: %X:%X:%X:%X:%X:%X]\n[Ethtype %04x]\n",
+        "[Dest: %02X:%02X:%02X:%02X:%02X:%02X]\n[Src: %02X:%02X:%02X:%02X:%02X:%02X]\n[Ethtype %04x]\n",
         header->ether_dhost[0], header->ether_dhost[1], header->ether_dhost[2],
         header->ether_dhost[3], header->ether_dhost[4], header->ether_dhost[5],
         header->ether_shost[0], header->ether_shost[1], header->ether_shost[2],

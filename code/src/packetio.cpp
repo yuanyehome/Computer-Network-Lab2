@@ -19,7 +19,7 @@ typedef int (*frameReceiveCallback)(const void*, int);
 void strToMac(const std::string& mac, u_char* buf)
 {
     int tmp[6];
-    sscanf(mac.c_str(), "%X:%X:%X:%X:%X:%X", tmp, tmp + 1, tmp + 2, tmp + 3,
+    sscanf(mac.c_str(), "%02X:%02X:%02X:%02X:%02X:%02X", tmp, tmp + 1, tmp + 2, tmp + 3,
         tmp + 4, tmp + 5);
     for (int i = 0; i < 6; ++i) {
         buf[i] = (u_char)tmp[i];
