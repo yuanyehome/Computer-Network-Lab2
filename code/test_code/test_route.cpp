@@ -31,6 +31,10 @@ int main()
     inet_aton("10.100.1.1", &src);
     inet_aton("10.100.2.2", &dst);
     u_char buf[6] = "hello";
+    dbg_printf("\033[31m[DEBUG---------------]\033[0m");
+    for (int i = 0; i < 6; ++i) {
+        dbg_printf("%x ", buf[i]);
+    }
     sendIPPacket(manager, src, dst, IPPROTO_UDP, buf, 6);
     return 0;
 }
