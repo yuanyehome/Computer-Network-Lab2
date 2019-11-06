@@ -20,12 +20,13 @@ int IP::myIPCallback(const void* buf, const int len)
         assert(len > 20);
         dbg_printf("\033[32m[INFO]\033[0m [myIPCallback] [srcIP: %s] [dstIP: %s] [len: %d]\n",
             IPtoStr(pckt.header.ip_src).c_str(), IPtoStr(pckt.header.ip_dst).c_str(), len);
+        dbg_printf("\033[32m[INFO]\033[0m [received an IP packet]\n\033[32m[Content]\033[0m:\n");
+        for (int i = 0; i < len - 20; ++i) {
+            dbg_printf("%02x ", pckt.payload[i]);
+        }
+        dbg_printf("\n");
         if (findHostIP(pckt.header.ip_dst)) {
-            dbg_printf("\033[32m[INFO]\033[0m [received an IP packet]\n\033[32m[Content]\033[0m:\n");
-            for (int i = 0; i < len - 20; ++i) {
-                dbg_printf("%02x ", pckt.payload[i]);
-            }
-            dbg_printf("\n");
+            dbg_printf("\033[32m[INFO]\033 This is me! \n");
         } else {
             dbg_printf("\033[32m[INFO] [Forwarding]\033[0m\n");
             sendIPPacket(manager, pckt.header.ip_src, pckt.header.ip_dst, IPPROTO_UDP, pckt.payload, len - 20);
