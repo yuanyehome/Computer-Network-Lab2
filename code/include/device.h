@@ -56,7 +56,7 @@ struct DeviceManager {
 
     dev_ID addDevice(const std::string& dev_name);
     dev_ID findDevice(const std::string& dev_name);
-    Device* findDevice(const in_addr src);
+    Device* findDevice(const ip_addr src, const ip_addr dst);
     /**
    * @brief Register a callback function to be called each time an Ethernet II
    * frame was received.

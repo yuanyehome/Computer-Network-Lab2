@@ -1,4 +1,4 @@
-#include "arp.h"
+#include "routeTable.h"
 
 int main()
 {
@@ -23,5 +23,14 @@ int main()
         dbg_printf("\n");
         head = head->next;
     }
+    Router::router_mgr.initializeTable(manager);
+    IP::startBroadcast(manager);
+
+    sleep(10);
+    ip_addr src, dst;
+    inet_aton("10.100.1.1", &src);
+    inet_aton("10.100.2.2", &dst);
+    u_char buf[6] = "hello";
+    sendIPPacket(manager, src, dst, IPPROTO_UDP, buf, 6);
     return 0;
 }

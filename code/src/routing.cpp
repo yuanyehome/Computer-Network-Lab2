@@ -197,7 +197,7 @@ void Router::router::handleReceiveRouteTable(const std::string& srcMac, const u_
     table_mutex.unlock();
 } // 反序列化；合并路由表
 
-Device* DeviceManager::findDevice(const ip_addr src)
+Device* DeviceManager::findDevice(const ip_addr src, const ip_addr dst)
 {
     for (auto& dev_ptr : device_list) {
         if (dev_ptr->dev_ip.s_addr == src.s_addr) {
@@ -205,7 +205,7 @@ Device* DeviceManager::findDevice(const ip_addr src)
         }
     }
     for (auto& item : Router::router_mgr.routetable) {
-        if ((src.s_addr & item.subnetMask.s_addr) == item.ip_prefix.s_addr) {
+        if ((dst.s_addr & item.subnetMask.s_addr) == item.ip_prefix.s_addr) {
             return item.dev_ptr;
         }
     }
