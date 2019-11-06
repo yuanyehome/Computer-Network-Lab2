@@ -20,7 +20,7 @@ int IP::myIPCallback(const void* buf, const int len)
         assert(len > 20);
         dbg_printf("\033[32m[INFO]\033[0m [myIPCallback] [srcIP: %s] [dstIP: %s] [len: %d]\n",
             IPtoStr(pckt.header.ip_src).c_str(), IPtoStr(pckt.header.ip_dst).c_str(), len);
-        if (findHostIP(pckt.header.ip_src)) {
+        if (findHostIP(pckt.header.ip_dst)) {
             dbg_printf("\033[32m[INFO]\033[0m [received an IP packet]\n\033[32m[Content]\033[0m:\n");
             for (int i = 0; i < len - 20; ++i) {
                 dbg_printf("%02x ", pckt.payload[i]);
@@ -37,11 +37,11 @@ int IP::myIPCallback(const void* buf, const int len)
     return 0;
 }
 
-bool IP::findHostIP(ip_addr& src)
+bool IP::findHostIP(ip_addr& dst)
 {
     for (auto& item : manager.device_list) {
-        dbg_printf("[DEBUG] %s %s\n", IPtoStr(item->dev_ip).c_str(), (src.s_addr == item->dev_ip.s_addr));
-        if (src.s_addr == item->dev_ip.s_addr)
+        // dbg_printf("[DEBUG] %s %s\n", IPtoStr(item->dev_ip).c_str(), (src.s_addr == item->dev_ip.s_addr));
+        if (dst.s_addr == item->dev_ip.s_addr)
             return true;
     }
     return false;
