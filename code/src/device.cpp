@@ -189,11 +189,6 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
             return;
         }
         memcpy(content, packet_content + 14, size);
-        dbg_printf("\033[31m[DEBUG---------------]\033[0m");
-        for (int i = 0; i < 6; ++i) {
-            dbg_printf("%x", *(content + i + 20));
-        }
-        dbg_printf("\n");
         Device::onReceived(content, size);
     }
 }
