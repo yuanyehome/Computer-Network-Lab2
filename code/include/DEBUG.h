@@ -21,6 +21,9 @@
 #include <thread>
 #include <unistd.h>
 #include <vector>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 #define MAX_ARP_WATING_TIME 2
 #define MAX_ARP_RETRY 3
