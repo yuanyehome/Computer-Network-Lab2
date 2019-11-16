@@ -12,18 +12,19 @@
 #ifdef __APPLE__
 #include <net/if_dl.h>
 #endif
+#include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include <netinet/tcp.h>
 #include <pcap/pcap.h>
 #include <set>
 #include <string>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <thread>
 #include <unistd.h>
 #include <vector>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
 
 #define MAX_ARP_WATING_TIME 2
 #define MAX_ARP_RETRY 3
@@ -43,3 +44,4 @@ typedef int (*IPPacketReceiveCallback)(const void* buf, int len);
 typedef int dev_ID;
 typedef int (*frameReceiveCallback)(const void*, int);
 typedef int distance;
+typedef int fd_t;

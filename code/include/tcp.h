@@ -2,17 +2,46 @@
 #define TCP_H
 #include "routeTable.h"
 
+struct TCB {
+    fd_t conn_fd;
+    ip_addr another_ip;
+    in_port_t another_port;
+    TCB(fd_t conn_fd_, ip_addr another_ip_, in_port_t another_port_)
+        : conn_fd(conn_fd_)
+        , another_port(another_port_)
+    {
+        another_ip.s_addr = another_ip_.s_addr;
+    }
+};
+struct listen_mgr {
+    fd_t mgr_fd;
+    sockaddr_in* sock;
+    std::vector<TCB> listen_list;
+    listen_mgr(fd_t fd, sockaddr_in* sock_)
+        : mgr_fd(fd)
+        , sock(sock_)
+    {
+    }
+};
+namespace BIND {
+extern std::map<fd_t, sockaddr*> bind_list;
+}
+namespace LISTEN_LIST {
+extern std::mutex is_open_mutex;
+extern std::vector<listen_mgr> listen_list_mgr;
+}
+
 /**
  * @see [POSIX.1-2017:socket](http://pubs.opengroup.org/onlinepubs/
  * 9699919799/functions/socket.html)
  */
-int __wrap_socket(int domain, int type, int protocol);
+fd_t __wrap_socket(int domain, int type, int protocol);
 
 /**
  * @see [POSIX.1-2017:bind](http://pubs.opengroup.org/onlinepubs/
  * 9699919799/functions/bind.html)
  */
-int __wrap_bind(int socket, const struct sockaddr* address,
+int __wrap_bind(fd_t socket, const struct sockaddr* address,
     socklen_t address_len);
 
 /**
@@ -61,6 +90,10 @@ int __wrap_getaddrinfo(const char* node, const char* service,
     const struct addrinfo* hints,
     struct addrinfo** res);
 
-// srcPort怎么确定？ 当多个包顺序不对时怎么办？ 握手的过程应该在哪个函数里面？
+int TCP_handler(IP::packet& pckt, int len);
+
+bool check_SYN(IP::packet& pckt, int len);
+
+//
 
 #endif
