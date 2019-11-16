@@ -27,7 +27,7 @@ namespace BIND {
 extern std::map<fd_t, sockaddr*> bind_list;
 }
 namespace LISTEN_LIST {
-extern std::mutex is_open_mutex;
+extern std::mutex change_mutex;
 extern std::vector<listen_mgr> listen_list_mgr;
 }
 
@@ -93,6 +93,8 @@ int __wrap_getaddrinfo(const char* node, const char* service,
 int TCP_handler(IP::packet& pckt, int len);
 
 bool check_SYN(IP::packet& pckt, int len);
+
+void handle_SYN_RECV(TCB& task, sockaddr_in* mgr);
 
 //
 
