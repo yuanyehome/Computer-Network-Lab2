@@ -34,7 +34,6 @@ void Router::router::printTable()
         dbg_printf("%s", item.first.c_str());
     }
     dbg_printf("\n");
-    // 待完成
     dbg_printf("\033[35m[Table]\033[0m\n");
     dbg_printf("______________________________________________________________________________________\n");
     dbg_printf("||   \033[34msrc_ip_prefix\033[0m   ||   \033[34msrc_ip_subnet\033[0m   ||      \033[34mvia_mac\033[0m      ||      \033[34mdst_mac\033[0m      ||\n");
