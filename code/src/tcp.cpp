@@ -4,7 +4,7 @@ namespace DFA {
 std::map<fd_t, dfa_status> status_list;
 }
 namespace BIND {
-std::map<fd_t, sockaddr*> bind_list;
+std::map<fd_t, sock_msg> bind_list;
 }
 namespace LISTEN_LIST {
 std::mutex change_mutex;
@@ -24,6 +24,30 @@ bool check_SYN(IP::packet& pckt, int len)
 void handle_SYN_RECV(TCB& task, sockaddr_in* mgr)
 {
     tcphdr hdr;
+    hdr.syn = 1;
+    hdr.ack = 1;
+    hdr.th_seq = BIND::bind_list.find(task.conn_fd)->second.my_seq_init;
+    hdr.th_ack = task.hdr.th_seq + 1;
+    hdr.th_sport = mgr->sin_port;
+    hdr.th_dport = task.another_port;
+    change_tcphdr_to_net(hdr);
+    sendIPPacket(manager, mgr->sin_addr, task.another_ip, IPPROTO_TCP, &hdr, sizeof(hdr));
+}
+
+void change_tcphdr_to_host(tcphdr& hdr)
+{
+    hdr.th_dport = ntohs(hdr.th_dport);
+    hdr.th_sport = ntohs(hdr.th_sport);
+    hdr.th_seq = ntohl(hdr.th_seq);
+    hdr.th_ack = ntohl(hdr.th_ack);
+}
+
+void change_tcphdr_to_net(tcphdr& hdr)
+{
+    hdr.th_dport = htons(hdr.th_dport);
+    hdr.th_sport = htons(hdr.th_sport);
+    hdr.th_seq = htonl(hdr.th_seq);
+    hdr.th_ack = htonl(hdr.th_ack);
 }
 
 int DFA::change_status(fd_t fd, dfa_status status)
@@ -41,12 +65,14 @@ int DFA::change_status(fd_t fd, dfa_status status)
 
 int TCP_handler(IP::packet& pckt, int len)
 {
+    tcphdr hdr = *(tcphdr*)(pckt.payload);
+    change_tcphdr_to_host(hdr);
     if (check_SYN(pckt, len)) {
         LISTEN_LIST::change_mutex.lock();
         for (auto& item : LISTEN_LIST::listen_list_mgr) {
-            if (item.sock->sin_addr.s_addr == pckt.header.ip_dst.s_addr && (item.sock->sin_port == ((sockaddr_in*)pckt.payload)->sin_port)) {
+            if (item.sock->sin_addr.s_addr == pckt.header.ip_dst.s_addr && (item.sock->sin_port == hdr.th_dport)) {
                 in_port_t another_port = get_port(pckt);
-                item.listen_list.push_back(TCB(-1, pckt.header.ip_src, another_port));
+                item.listen_list.push_back(TCB(-1, pckt.header.ip_src, another_port, hdr));
                 LISTEN_LIST::change_mutex.unlock();
                 return 0;
             }
@@ -72,7 +98,7 @@ fd_t __wrap_socket(int domain, int type, int protocol)
                 assert(BIND::bind_list.find(i) == BIND::bind_list.end());
                 sockaddr* tmp_sock = new sockaddr;
                 memset(tmp_sock, 0, sizeof(sockaddr));
-                BIND::bind_list[i] = tmp_sock;
+                BIND::bind_list[i].addr = tmp_sock;
                 return i;
             } else {
                 continue;
@@ -93,7 +119,7 @@ int __wrap_bind(fd_t socket, const struct sockaddr* address,
     try {
         sockaddr* tmp_sock = new sockaddr;
         memcpy(tmp_sock, address, address_len);
-        BIND::bind_list[socket] = tmp_sock;
+        BIND::bind_list[socket].addr = tmp_sock;
         return 0;
     } catch (const char* e) {
         dbg_printf("\033[31m[BIND ERROR]\033[0m e\n");
@@ -108,9 +134,9 @@ int __wrap_listen(int socket, int backlog)
             dbg_printf("\033[31m[LISTEN ERROR]\033[0m This fd is not allocated\n");
             return -1;
         }
-        sockaddr_in* this_sock = (sockaddr_in*)BIND::bind_list[socket];
+        sockaddr_in* this_sock = (sockaddr_in*)BIND::bind_list[socket].addr;
         if (this_sock->sin_addr.s_addr == 0 || this_sock->sin_port == 0) {
-            dbg_printf("\033[31m[LISTEN ERROR]\033[0m Please specify IP address and port for listening\n");
+            dbg_printf("\033[31m[LISTEN ERROR]\033[0m Please specify IP address and port for listening by using function bind()\n");
             return -1;
         }
         LISTEN_LIST::change_mutex.lock();
@@ -154,6 +180,7 @@ int __wrap_accept(int socket, struct sockaddr* address,
                     channel.sin_addr.s_addr = task.another_ip.s_addr;
                     channel.sin_port = task.another_port;
                     __wrap_bind(task.conn_fd, (sockaddr*)(&channel), sizeof(channel));
+                    BIND::bind_list.find(task.conn_fd)->second.another_seq_init = task.hdr.th_seq;
                     change_status(task.conn_fd, DFA::SYN_RCVD);
                     handle_SYN_RECV(task, item.sock);
                     item.listen_list.erase(item.listen_list.begin());
@@ -171,4 +198,9 @@ int __wrap_accept(int socket, struct sockaddr* address,
         dbg_printf("\033[31m[ACCEPT ERROR]\033[0m You are trying to accept a fd which is not listening! \n");
         return -1;
     }
+}
+
+int __wrap_connect(int socket, const struct sockaddr* address,
+    socklen_t address_len)
+{
 }
