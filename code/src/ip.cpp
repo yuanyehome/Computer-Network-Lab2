@@ -4,6 +4,60 @@ namespace IP {
 IPPacketReceiveCallback IPCallback;
 }
 
+uint16_t getChecksum(const void* vdata, size_t length)
+{
+    // Cast the data pointer to one that can be indexed.
+    char* data = (char*)vdata;
+
+    // Initialise the accumulator.
+    uint64_t acc = 0xffff;
+
+    // Handle any partial block at the start of the data.
+    unsigned int offset = ((uintptr_t)data) & 3;
+    if (offset) {
+        size_t count = 4 - offset;
+        if (count > length)
+            count = length;
+        uint32_t word = 0;
+        memcpy(offset + (char*)&word, data, count);
+        acc += ntohl(word);
+        data += count;
+        length -= count;
+    }
+
+    // Handle any complete 32-bit blocks.
+    char* data_end = data + (length & ~3);
+    while (data != data_end) {
+        uint32_t word;
+        memcpy(&word, data, 4);
+        acc += ntohl(word);
+        data += 4;
+    }
+    length &= 3;
+
+    // Handle any partial block at the end of the data.
+    if (length) {
+        uint32_t word = 0;
+        memcpy(&word, data, length);
+        acc += ntohl(word);
+    }
+
+    // Handle deferred carries.
+    acc = (acc & 0xffffffff) + (acc >> 32);
+    while (acc >> 16) {
+        acc = (acc & 0xffff) + (acc >> 16);
+    }
+
+    // If the data began at an odd byte address
+    // then reverse the byte order to compensate.
+    if (offset & 1) {
+        acc = ((acc & 0xff00) >> 8) | ((acc & 0x00ff) << 8);
+    }
+
+    // Return the checksum in network byte order.
+    return htons(~acc);
+}
+
 DeviceManager manager;
 // buf and len are both a whole IP packet
 int IP::myIPCallback(const void* buf, const int len)
@@ -12,6 +66,11 @@ int IP::myIPCallback(const void* buf, const int len)
     try {
         packet pckt;
         pckt.header = *(ip*)buf;
+        if (getChecksum(&pckt.header, pckt.header.ip_hl << 2) != 0) {
+            dbg_printf("\033[31m[CHECKSUM ERROR]\033[0m\n");
+            return -1;
+        }
+        dbg_printf("\033[32m[CHECKSUM SUCCESS]\033[0m\n");
         pckt.change_back();
         pckt.payload = (u_char*)buf + 20;
         assert(len > 20);
@@ -113,6 +172,8 @@ int sendIPPacket(DeviceManager& mgr,
     pckt.payload = (u_char*)buf;
     int total_len = (pckt.header.ip_hl << 2) + len;
     pckt.header.ip_len = total_len;
+    pckt.header.ip_sum = 0;
+    pckt.header.ip_sum = getChecksum(&pckt.header, pckt.header.ip_hl << 2);
     pckt.change_to_net_byte_order();
     u_char* IPpacket_final = new u_char[total_len];
     u_char* char_mac = new u_char[6];

@@ -30,6 +30,7 @@ void handle_SYN_RECV(TCB& task, sockaddr_in* mgr)
     hdr.th_ack = task.hdr.th_seq + 1;
     hdr.th_sport = mgr->sin_port;
     hdr.th_dport = task.another_port;
+    hdr.th_win = 65535;
     change_tcphdr_to_net(hdr);
     sendIPPacket(manager, mgr->sin_addr, task.another_ip, IPPROTO_TCP, &hdr, sizeof(hdr));
 }
@@ -40,6 +41,7 @@ void change_tcphdr_to_host(tcphdr& hdr)
     hdr.th_sport = ntohs(hdr.th_sport);
     hdr.th_seq = ntohl(hdr.th_seq);
     hdr.th_ack = ntohl(hdr.th_ack);
+    hdr.th_win = ntohl(hdr.th_win);
 }
 
 void change_tcphdr_to_net(tcphdr& hdr)
@@ -48,6 +50,7 @@ void change_tcphdr_to_net(tcphdr& hdr)
     hdr.th_sport = htons(hdr.th_sport);
     hdr.th_seq = htonl(hdr.th_seq);
     hdr.th_ack = htonl(hdr.th_ack);
+    hdr.th_win = htonl(hdr.th_win);
 }
 
 int DFA::change_status(fd_t fd, dfa_status status)
@@ -84,6 +87,7 @@ int TCP_handler(IP::packet& pckt, int len)
     } else {
         // not implemented;
     }
+    return 0;
 }
 
 fd_t __wrap_socket(int domain, int type, int protocol)
@@ -116,10 +120,41 @@ int __wrap_bind(fd_t socket, const struct sockaddr* address,
     socklen_t address_len)
 {
     assert(BIND::bind_list.find(socket) == BIND::bind_list.end());
+    ip_addr sock_ip;
+    in_port_t sock_port;
+    sock_ip.s_addr = ((sockaddr_in*)address)->sin_addr.s_addr;
+    sock_port = ((sockaddr_in*)address)->sin_port;
+    if (sock_ip.s_addr == INADDR_ANY) {
+        // not implemented
+    } else {
+        auto dev_ptr = manager.findDevice(sock_ip);
+        if (dev_ptr == NULL) {
+            dbg_printf("\033[31m[BIND ERROR] Illegal IP address!\n");
+            return -1;
+        }
+        dev_ptr->port_mutex.lock();
+        if (dev_ptr->empty_port[sock_port]) {
+            dbg_printf("\033[31m[BIND ERROR] This is an occupied port!\n");
+            dev_ptr->port_mutex.unlock();
+            return -1;
+        }
+        if (sock_port == 0) {
+            for (int _ = 1024; _ <= 65536; ++_) {
+                if (!dev_ptr->empty_port[_]) {
+                    sock_port = _;
+                    break;
+                }
+            }
+        }
+        dev_ptr->empty_port[sock_port] = 1;
+        dev_ptr->port_mutex.unlock();
+    }
     try {
-        sockaddr* tmp_sock = new sockaddr;
-        memcpy(tmp_sock, address, address_len);
-        BIND::bind_list[socket].addr = tmp_sock;
+        sockaddr_in* tmp_sock = new sockaddr_in;
+        tmp_sock->sin_addr.s_addr = sock_ip.s_addr;
+        tmp_sock->sin_port = sock_port;
+        BIND::bind_list[socket] = sock_msg();
+        BIND::bind_list[socket].addr = (sockaddr*)tmp_sock;
         return 0;
     } catch (const char* e) {
         dbg_printf("\033[31m[BIND ERROR]\033[0m e\n");
@@ -151,6 +186,7 @@ int __wrap_listen(int socket, int backlog)
         dbg_printf("\033[31m[LISTEN ERROR]\033[0m e\n");
         return -1;
     }
+    return 0;
 }
 
 int __wrap_accept(int socket, struct sockaddr* address,
@@ -175,11 +211,12 @@ int __wrap_accept(int socket, struct sockaddr* address,
                 } else {
                     TCB task = item.listen_list[0];
                     task.conn_fd = __wrap_socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-                    sockaddr_in channel;
-                    channel.sin_family = AF_INET;
-                    channel.sin_addr.s_addr = task.another_ip.s_addr;
-                    channel.sin_port = task.another_port;
-                    __wrap_bind(task.conn_fd, (sockaddr*)(&channel), sizeof(channel));
+                    sockaddr_in* channel = new sockaddr_in;
+                    channel->sin_family = AF_INET;
+                    channel->sin_addr.s_addr = task.another_ip.s_addr;
+                    channel->sin_port = task.another_port;
+                    BIND::bind_list[task.conn_fd] = sock_msg();
+                    BIND::bind_list[task.conn_fd].addr = (sockaddr*)channel;
                     BIND::bind_list.find(task.conn_fd)->second.another_seq_init = task.hdr.th_seq;
                     change_status(task.conn_fd, DFA::SYN_RCVD);
                     handle_SYN_RECV(task, item.sock);
@@ -198,9 +235,81 @@ int __wrap_accept(int socket, struct sockaddr* address,
         dbg_printf("\033[31m[ACCEPT ERROR]\033[0m You are trying to accept a fd which is not listening! \n");
         return -1;
     }
+    return 0;
 }
 
 int __wrap_connect(int socket, const struct sockaddr* address,
     socklen_t address_len)
 {
+    //check socket
+    if (BIND::bind_list.find(socket) == BIND::bind_list.end()) {
+        dbg_printf("\033[31m[CONNECT ERROR]\033[0m This fd is not allocated\n");
+        return -1;
+    }
+    // check if sockaddr.ip and sockaddr.port are zero.
+    ip_addr serverIP = ((sockaddr_in*)address)->sin_addr;
+    in_port_t serverPort = ((sockaddr_in*)address)->sin_port;
+    sockaddr_in end_point = *(sockaddr_in*)BIND::bind_list.find(socket)->second.addr;
+    if (end_point.sin_addr.s_addr == 0) {
+        for (auto& item : Router::router_mgr.routetable) {
+            if (item.contain_ip(serverIP)) {
+                end_point.sin_addr.s_addr = item.dev_ptr->dev_ip.s_addr;
+                break;
+            }
+        }
+        if (end_point.sin_addr.s_addr == 0) {
+            dbg_printf("\033[31m[CONNECT ERROR]\033[0m Cann't find via device in route table!\n");
+            return -1;
+        }
+    }
+    if (end_point.sin_port == 0) {
+        // assign a port if no port provided
+        auto dev_ptr = manager.findDevice(end_point.sin_addr);
+        if (dev_ptr == NULL) {
+            dbg_printf("\033[31m[CONNECT ERROR] Illegal IP address!\n");
+            return -1;
+        }
+        dev_ptr->port_mutex.lock();
+        for (int _ = 1024; _ <= 65536; ++_) {
+            if (!dev_ptr->empty_port[_]) {
+                end_point.sin_port = _;
+                break;
+            }
+        }
+        dev_ptr->empty_port[end_point.sin_port] = 1;
+        dev_ptr->port_mutex.unlock();
+    }
+    return 0;
+}
+
+int __wrap_getaddrinfo(const char* node, const char* service,
+    const struct addrinfo* hints,
+    struct addrinfo** res)
+{
+    if (hints->ai_family == AF_INET && hints->ai_protocol == IPPROTO_TCP && hints->ai_socktype == SOCK_STREAM) {
+        addrinfo* head = new addrinfo;
+        *res = head;
+        head->ai_next = NULL;
+        sockaddr_in* tmp = new sockaddr_in;
+        inet_pton(AF_INET, node, &tmp->sin_addr.s_addr);
+        tmp->sin_addr.s_addr = htonl(tmp->sin_addr.s_addr);
+        tmp->sin_port = htons(atoi(service));
+        head->ai_addr = (sockaddr*)(tmp);
+        head->ai_addrlen = sizeof(sockaddr_in);
+        return 0;
+    } else {
+        dbg_printf("\033[31m[GETADDRINFO ERROR] [UNSUPPORTED FLAGS]\033[0m\n");
+        return -1;
+    }
+}
+
+int __wrap__freeaddrinfo(addrinfo* ai)
+{
+    addrinfo* next;
+    while (ai != NULL) {
+        next = ai->ai_next;
+        delete ai;
+        ai = next;
+    }
+    return 0;
 }

@@ -39,6 +39,9 @@ struct Device {
     ip_addr dev_ip;
     ip_addr subnetMask;
 
+    bool empty_port[65536];
+    std::mutex port_mutex;
+
     Device(dev_ID id_, const std::string& name_, const std::string& mac_);
     ~Device();
     /*
@@ -57,6 +60,7 @@ struct DeviceManager {
     dev_ID addDevice(const std::string& dev_name);
     dev_ID findDevice(const std::string& dev_name);
     Device* findDevice(const ip_addr src, const ip_addr dst);
+    Device* findDevice(const ip_addr IP);
     /**
    * @brief Register a callback function to be called each time an Ethernet II
    * frame was received.

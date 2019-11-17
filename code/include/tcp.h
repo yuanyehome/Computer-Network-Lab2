@@ -107,6 +107,7 @@ int __wrap_close(int fildes);
 int __wrap_getaddrinfo(const char* node, const char* service,
     const struct addrinfo* hints,
     struct addrinfo** res);
+int __wrap__freeaddrinfo(addrinfo* ai);
 
 int TCP_handler(IP::packet& pckt, int len);
 

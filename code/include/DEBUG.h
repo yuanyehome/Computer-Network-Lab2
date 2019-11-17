@@ -31,6 +31,8 @@
 #define MY_ROUTE_PROTO 0xffff
 #define ROUTE_OFFLINE_TIME 5
 #define ROUTE_INTERVAL 2
+#define EMPTY 0
+#define OCCUPIED 1
 
 #define DEBUG
 #ifdef DEBUG

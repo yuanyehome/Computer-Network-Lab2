@@ -63,6 +63,9 @@ Device::Device(dev_ID id_, const std::string& name_, const std::string& mac_)
     , id(id_)
     , mac(mac_)
 {
+    for (int i = 0; i < 65536; ++i) {
+        empty_port[i] = EMPTY;
+    }
     ifaddrs* if_link;
     if (getifaddrs(&if_link) < 0) {
         throw "\033[31m[ERROR]\033[0mgetifaddr failed!";
@@ -191,4 +194,13 @@ void my_pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header,
         memcpy(content, packet_content + 14, size);
         Device::onReceived(content, size);
     }
+}
+
+Device* DeviceManager::findDevice(const ip_addr IP)
+{
+    for (auto& item : device_list) {
+        if (item->dev_ip.s_addr == IP.s_addr)
+            return item;
+    }
+    return NULL;
 }
