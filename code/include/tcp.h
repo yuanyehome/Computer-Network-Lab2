@@ -30,12 +30,12 @@ struct listen_mgr {
     }
 };
 struct sock_msg {
-    sockaddr* addr;
+    sockaddr_in addr;
+    sockaddr_in another_addr;
     int my_seq_init;
     int another_seq_init;
     sock_msg()
-        : addr(NULL)
-        , another_seq_init(-1)
+        : another_seq_init(-1)
     {
         my_seq_init = rand() % 65536;
     };
@@ -43,6 +43,7 @@ struct sock_msg {
 namespace BIND {
 extern std::mutex msg_mutex;
 extern std::map<fd_t, sock_msg> bind_list;
+fd_t findFdBySock(sockaddr_in sock);
 }
 namespace LISTEN_LIST {
 extern std::mutex change_mutex;
@@ -111,13 +112,15 @@ int __wrap__freeaddrinfo(addrinfo* ai);
 
 int TCP_handler(IP::packet& pckt, int len);
 
-bool check_SYN(IP::packet& pckt, int len);
-
 void handle_SYN_RECV(TCB& task, sockaddr_in* mgr);
+void handle_SYN_ACK_recv(fd_t sock_fd, IP::packet& pckt);
 
 void change_tcphdr_to_host(tcphdr& hdr);
 
 void change_tcphdr_to_net(tcphdr& hdr);
+
+bool check_SYN(IP::packet& pckt, int len);
+bool check_SYN_ACK(IP::packet& pckt, int len);
 
 //
 

@@ -3,6 +3,7 @@
 #include "DEBUG.h"
 #include "device.h"
 
+uint16_t getChecksum(const void* vdata, size_t length);
 namespace IP {
 extern IPPacketReceiveCallback IPCallback;
 void startBroadcast(const DeviceManager& dev_mgr);
@@ -11,7 +12,6 @@ int setRoutingTable(const struct in_addr dest, const struct in_addr mask,
     const void* nextHopMAC, const char* device);
 int myIPCallback(const void* buf, const int len);
 bool findHostIP(ip_addr& src);
-uint16_t getChecksum(const void* vdata, size_t length);
 struct packet {
     struct __attribute__((__packed__)) {
         ip header;

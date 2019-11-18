@@ -18,7 +18,12 @@ in_port_t get_port(IP::packet& pckt)
 
 bool check_SYN(IP::packet& pckt, int len)
 {
-    return ((tcphdr*)pckt.payload)->syn;
+    return ((tcphdr*)pckt.payload)->syn && (!(((tcphdr*)pckt.payload)->ack));
+}
+
+bool check_SYN_ACK(IP::packet& pckt, int len)
+{
+    return ((tcphdr*)pckt.payload)->syn && ((tcphdr*)pckt.payload)->ack;
 }
 
 void handle_SYN_RECV(TCB& task, sockaddr_in* mgr)
@@ -32,7 +37,48 @@ void handle_SYN_RECV(TCB& task, sockaddr_in* mgr)
     hdr.th_dport = task.another_port;
     hdr.th_win = 65535;
     change_tcphdr_to_net(hdr);
+    hdr.check = 0;
+    hdr.check = getChecksum(&hdr, 20);
     sendIPPacket(manager, mgr->sin_addr, task.another_ip, IPPROTO_TCP, &hdr, sizeof(hdr));
+}
+void handle_SYN_ACK_recv(fd_t sock_fd, IP::packet& pckt)
+{
+    // change status
+    if (DFA::status_list.find(sock_fd)->second == DFA::SYN_SENT)
+        DFA::change_status(sock_fd, DFA::ESTAB);
+    else {
+        dbg_printf("\033[32m[handle SYN_ACK recv INFO]\033[0m My status is not SYN_SENT and recv a SYN/ACK, it will be ignored!\n");
+        return;
+    }
+    // send ACK
+    tcphdr hdr;
+    hdr.ack = 1;
+    hdr.th_seq = BIND::bind_list.find(sock_fd)->second.my_seq_init;
+    hdr.th_ack = ((tcphdr*)pckt.payload)->th_seq + 1;
+    hdr.th_dport = ((tcphdr*)pckt.payload)->th_sport;
+    hdr.th_sport = ((tcphdr*)pckt.payload)->th_dport;
+    hdr.th_win = 65535;
+    change_tcphdr_to_net(hdr);
+    hdr.check = 0;
+    hdr.check = getChecksum(&hdr, 20);
+    sendIPPacket(manager, pckt.header.ip_dst, pckt.header.ip_src, IPPROTO_TCP, &hdr, sizeof(hdr));
+    // change sock_msg, full another_sock
+    BIND::bind_list.find(sock_fd)->second.another_addr.sin_addr.s_addr = pckt.header.ip_src.s_addr;
+    BIND::bind_list.find(sock_fd)->second.another_addr.sin_port = ((tcphdr*)pckt.payload)->th_sport;
+}
+
+void sendSYN(int fd, sockaddr_in end_point, const sockaddr* dst_addr)
+{
+    tcphdr hdr;
+    hdr.syn = 1;
+    hdr.th_seq = BIND::bind_list.find(fd)->second.my_seq_init;
+    hdr.th_sport = end_point.sin_port;
+    hdr.th_dport = ((sockaddr_in*)dst_addr)->sin_port;
+    hdr.th_win = 65535;
+    change_tcphdr_to_net(hdr);
+    hdr.check = 0;
+    hdr.check = getChecksum(&hdr, 20);
+    sendIPPacket(manager, end_point.sin_addr, ((sockaddr_in*)dst_addr)->sin_addr, IPPROTO_TCP, &hdr, sizeof(hdr));
 }
 
 void change_tcphdr_to_host(tcphdr& hdr)
@@ -84,8 +130,28 @@ int TCP_handler(IP::packet& pckt, int len)
         dbg_printf("\033[32m[INFO] [TCP_handler] [SYN]\033[0m This IP is not listening, \
             and this packet will be dropped! \n");
         return -1;
+    } else if (check_SYN_ACK(pckt, len)) {
+        ip_addr sock_ip = pckt.header.ip_dst;
+        in_port_t sock_port = ((tcphdr*)pckt.payload)->th_dport;
+        Device* dev_ptr = manager.findDevice(sock_ip);
+        if (dev_ptr == NULL) {
+            dbg_printf("\033[31m[TCP_handler ERROR]\033[0m Something is wrong, I don't have this IP!\n");
+            return -1;
+        }
+        dev_ptr->port_mutex.lock();
+        if (!dev_ptr->empty_port[sock_port]) {
+            dev_ptr->port_mutex.unlock();
+            dbg_printf("\033[31m[TCP_handler ERROR]\033[0m Something is wrong, I don't have this port!\n");
+            return -1;
+        }
+        dev_ptr->port_mutex.unlock();
+        sockaddr_in sock;
+        sock.sin_addr = sock_ip;
+        sock.sin_port = sock_port;
+        fd_t sock_fd = BIND::findFdBySock(sock);
+        handle_SYN_ACK_recv(sock_fd, pckt);
     } else {
-        // not implemented;
+        // not implemented
     }
     return 0;
 }
@@ -100,9 +166,6 @@ fd_t __wrap_socket(int domain, int type, int protocol)
                 DFA::status_mutex.unlock();
                 FD::allovated_fds.insert(i);
                 assert(BIND::bind_list.find(i) == BIND::bind_list.end());
-                sockaddr* tmp_sock = new sockaddr;
-                memset(tmp_sock, 0, sizeof(sockaddr));
-                BIND::bind_list[i].addr = tmp_sock;
                 return i;
             } else {
                 continue;
@@ -150,11 +213,9 @@ int __wrap_bind(fd_t socket, const struct sockaddr* address,
         dev_ptr->port_mutex.unlock();
     }
     try {
-        sockaddr_in* tmp_sock = new sockaddr_in;
-        tmp_sock->sin_addr.s_addr = sock_ip.s_addr;
-        tmp_sock->sin_port = sock_port;
         BIND::bind_list[socket] = sock_msg();
-        BIND::bind_list[socket].addr = (sockaddr*)tmp_sock;
+        BIND::bind_list[socket].addr.sin_addr.s_addr = sock_ip.s_addr;
+        BIND::bind_list[socket].addr.sin_port = sock_port;
         return 0;
     } catch (const char* e) {
         dbg_printf("\033[31m[BIND ERROR]\033[0m e\n");
@@ -169,14 +230,14 @@ int __wrap_listen(int socket, int backlog)
             dbg_printf("\033[31m[LISTEN ERROR]\033[0m This fd is not allocated\n");
             return -1;
         }
-        sockaddr_in* this_sock = (sockaddr_in*)BIND::bind_list[socket].addr;
-        if (this_sock->sin_addr.s_addr == 0 || this_sock->sin_port == 0) {
+        sockaddr_in& this_sock = BIND::bind_list[socket].addr;
+        if (this_sock.sin_addr.s_addr == 0 || this_sock.sin_port == 0) {
             dbg_printf("\033[31m[LISTEN ERROR]\033[0m Please specify IP address and port for listening by using function bind()\n");
             return -1;
         }
         LISTEN_LIST::change_mutex.lock();
         DFA::status_mutex.lock();
-        LISTEN_LIST::listen_list_mgr.push_back(listen_mgr(socket, this_sock));
+        LISTEN_LIST::listen_list_mgr.push_back(listen_mgr(socket, &this_sock));
         DFA::status_list[socket] = DFA::LISTEN;
         DFA::status_mutex.unlock();
         LISTEN_LIST::change_mutex.unlock();
@@ -211,20 +272,18 @@ int __wrap_accept(int socket, struct sockaddr* address,
                 } else {
                     TCB task = item.listen_list[0];
                     task.conn_fd = __wrap_socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-                    sockaddr_in* channel = new sockaddr_in;
-                    channel->sin_family = AF_INET;
-                    channel->sin_addr.s_addr = task.another_ip.s_addr;
-                    channel->sin_port = task.another_port;
                     BIND::bind_list[task.conn_fd] = sock_msg();
-                    BIND::bind_list[task.conn_fd].addr = (sockaddr*)channel;
+                    BIND::bind_list[task.conn_fd].addr.sin_family = AF_INET;
+                    BIND::bind_list[task.conn_fd].addr.sin_addr.s_addr = task.another_ip.s_addr;
+                    BIND::bind_list[task.conn_fd].addr.sin_port = task.another_port;
                     BIND::bind_list.find(task.conn_fd)->second.another_seq_init = task.hdr.th_seq;
                     change_status(task.conn_fd, DFA::SYN_RCVD);
                     handle_SYN_RECV(task, item.sock);
                     item.listen_list.erase(item.listen_list.begin());
                     LISTEN_LIST::change_mutex.unlock();
                     if (address != NULL) {
-                        memcpy(address, &channel, sizeof(channel));
-                        *address_len = sizeof(channel);
+                        memcpy(address, &BIND::bind_list[task.conn_fd].addr, sizeof(sockaddr_in));
+                        *address_len = sizeof(sockaddr_in);
                     }
                     return 0;
                 }
@@ -249,7 +308,7 @@ int __wrap_connect(int socket, const struct sockaddr* address,
     // check if sockaddr.ip and sockaddr.port are zero.
     ip_addr serverIP = ((sockaddr_in*)address)->sin_addr;
     in_port_t serverPort = ((sockaddr_in*)address)->sin_port;
-    sockaddr_in end_point = *(sockaddr_in*)BIND::bind_list.find(socket)->second.addr;
+    sockaddr_in end_point = BIND::bind_list.find(socket)->second.addr;
     if (end_point.sin_addr.s_addr == 0) {
         for (auto& item : Router::router_mgr.routetable) {
             if (item.contain_ip(serverIP)) {
@@ -279,6 +338,8 @@ int __wrap_connect(int socket, const struct sockaddr* address,
         dev_ptr->empty_port[end_point.sin_port] = 1;
         dev_ptr->port_mutex.unlock();
     }
+    sendSYN(socket, end_point, address);
+    DFA::change_status(socket, DFA::SYN_SENT);
     return 0;
 }
 

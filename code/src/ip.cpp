@@ -172,9 +172,9 @@ int sendIPPacket(DeviceManager& mgr,
     pckt.payload = (u_char*)buf;
     int total_len = (pckt.header.ip_hl << 2) + len;
     pckt.header.ip_len = total_len;
+    pckt.change_to_net_byte_order();
     pckt.header.ip_sum = 0;
     pckt.header.ip_sum = getChecksum(&pckt.header, pckt.header.ip_hl << 2);
-    pckt.change_to_net_byte_order();
     u_char* IPpacket_final = new u_char[total_len];
     u_char* char_mac = new u_char[6];
     strToMac(dstMAC, char_mac);
