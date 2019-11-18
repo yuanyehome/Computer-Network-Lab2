@@ -111,16 +111,18 @@ int __wrap_getaddrinfo(const char* node, const char* service,
 int __wrap__freeaddrinfo(addrinfo* ai);
 
 int TCP_handler(IP::packet& pckt, int len);
+int sock_handler(fd_t sock_fd, IP::packet& pckt, int len, tcphdr& hdr);
 
 void handle_SYN_RECV(TCB& task, sockaddr_in* mgr);
-void handle_SYN_ACK_recv(fd_t sock_fd, IP::packet& pckt);
+void handle_SYN_ACK_recv(fd_t sock_fd, IP::packet& pckt, tcphdr& in_hdr);
 
 void change_tcphdr_to_host(tcphdr& hdr);
 
 void change_tcphdr_to_net(tcphdr& hdr);
 
-bool check_SYN(IP::packet& pckt, int len);
-bool check_SYN_ACK(IP::packet& pckt, int len);
+bool check_SYN(tcphdr& hdr);
+bool check_SYN_ACK(tcphdr& hdr);
+bool check_ACK(tcphdr& hdr);
 
 //
 

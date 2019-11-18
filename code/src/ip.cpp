@@ -67,10 +67,10 @@ int IP::myIPCallback(const void* buf, const int len)
         packet pckt;
         pckt.header = *(ip*)buf;
         if (getChecksum(&pckt.header, pckt.header.ip_hl << 2) != 0) {
-            dbg_printf("\033[31m[CHECKSUM ERROR]\033[0m\n");
+            dbg_printf("\033[31m[IP] [CHECKSUM ERROR]\033[0m\n");
             return -1;
         }
-        dbg_printf("\033[32m[CHECKSUM SUCCESS]\033[0m\n");
+        dbg_printf("\033[32m[IP] [CHECKSUM SUCCESS]\033[0m\n");
         pckt.change_back();
         pckt.payload = (u_char*)buf + 20;
         assert(len > 20);
