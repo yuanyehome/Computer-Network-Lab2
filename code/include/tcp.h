@@ -2,10 +2,9 @@
 #define TCP_H
 #include "routeTable.h"
 
-// 每个IP地址要维护一个port占用列表；
-// connect会优先采用bind的结果（IP与port）；
-// bind应该检查IP是否存在，如果不存在要bind失败，IP与port均置为0；port不对也会bind失败；只传了IP但是port为0那么随机指定。
-// TCP协议listen前似乎一定要指定端口
+// 每一个socket要存哪些东西？
+// seq_num超过了最大seq怎么办？
+
 struct TCB {
     fd_t conn_fd;
     ip_addr another_ip;
@@ -34,6 +33,8 @@ struct sock_msg {
     sockaddr_in another_addr;
     int my_seq_init;
     int another_seq_init;
+    int present_seq;
+    int another_present_seq;
     sock_msg()
         : another_seq_init(-1)
     {
@@ -43,7 +44,7 @@ struct sock_msg {
 namespace BIND {
 extern std::mutex msg_mutex;
 extern std::map<fd_t, sock_msg> bind_list;
-fd_t findFdBySock(sockaddr_in sock);
+fd_t findFdBySock(sockaddr_in sock, sockaddr_in another_sock);
 }
 namespace LISTEN_LIST {
 extern std::mutex change_mutex;

@@ -5,10 +5,13 @@ std::map<fd_t, dfa_status> status_list;
 }
 namespace BIND {
 std::map<fd_t, sock_msg> bind_list;
-fd_t findFdBySock(sockaddr_in sock)
+fd_t findFdBySock(sockaddr_in sock, sockaddr_in another_sock)
 {
     for (auto& item : bind_list) {
-        if (item.second.addr.sin_addr.s_addr == sock.sin_addr.s_addr && item.second.addr.sin_port == sock.sin_port)
+        if ((item.second.addr.sin_addr.s_addr == sock.sin_addr.s_addr
+                && item.second.addr.sin_port == sock.sin_port)
+            || (item.second.another_addr.sin_addr.s_addr == another_sock.sin_addr.s_addr
+                   && item.second.another_addr.sin_port == another_sock.sin_port))
             return item.first;
     }
     return -1;
@@ -133,7 +136,34 @@ int TCP_handler(IP::packet& pckt, int len)
     }
     dbg_printf("\033[32m[TCP_handler] [getChecksum success]\033[0m\n");
     change_tcphdr_to_host(hdr);
+    ip_addr sock_ip = pckt.header.ip_dst;
+    in_port_t sock_port = hdr.th_dport;
+    ip_addr another_ip = pckt.header.ip_src;
+    in_port_t another_port = hdr.th_sport;
+    Device* dev_ptr = manager.findDevice(sock_ip);
+    if (dev_ptr == NULL) {
+        dbg_printf("\033[31m[TCP_handler ERROR]\033[0m Something is wrong, I don't have this IP!\n");
+        return -1;
+    }
+    dev_ptr->port_mutex.lock();
+    if (!dev_ptr->empty_port[sock_port]) {
+        dev_ptr->port_mutex.unlock();
+        dbg_printf("\033[31m[TCP_handler ERROR]\033[0m Something is wrong, I don't have this port!\n");
+        return -1;
+    }
+    dev_ptr->port_mutex.unlock();
+    sockaddr_in sock, another_sock;
+    sock.sin_addr = sock_ip;
+    sock.sin_port = sock_port;
+    another_sock.sin_addr = another_ip;
+    another_sock.sin_port = another_port;
+    fd_t sock_fd = BIND::findFdBySock(sock, another_sock);
     if (check_SYN(hdr)) {
+        if (sock_fd > 0) {
+            dbg_printf("\033[31m[TCP_handler ERROR]\033[0m A connected socket received a SYN, and a RST will be sent");
+            //not implemented handle RST
+            return 0;
+        }
         LISTEN_LIST::change_mutex.lock();
         for (auto& item : LISTEN_LIST::listen_list_mgr) {
             if (item.sock->sin_addr.s_addr == pckt.header.ip_dst.s_addr && (item.sock->sin_port == hdr.th_dport)) {
@@ -147,31 +177,12 @@ int TCP_handler(IP::packet& pckt, int len)
         dbg_printf("\033[32m[INFO] [TCP_handler] [SYN]\033[0m This IP is not listening, \
             and this packet will be dropped! \n");
         return -1;
-    } else {
-        ip_addr sock_ip = pckt.header.ip_dst;
-        in_port_t sock_port = hdr.th_dport;
-        Device* dev_ptr = manager.findDevice(sock_ip);
-        if (dev_ptr == NULL) {
-            dbg_printf("\033[31m[TCP_handler ERROR]\033[0m Something is wrong, I don't have this IP!\n");
-            return -1;
-        }
-        dev_ptr->port_mutex.lock();
-        if (!dev_ptr->empty_port[sock_port]) {
-            dev_ptr->port_mutex.unlock();
-            dbg_printf("\033[31m[TCP_handler ERROR]\033[0m Something is wrong, I don't have this port!\n");
-            return -1;
-        }
-        dev_ptr->port_mutex.unlock();
-        sockaddr_in sock;
-        sock.sin_addr = sock_ip;
-        sock.sin_port = sock_port;
-        fd_t sock_fd = BIND::findFdBySock(sock);
-        if (sock_fd < 0) {
-            dbg_printf("\033[31m[TCP_handler ERROR]\033[0m No such fd!\n");
-            return -1;
-        }
-        sock_handler(sock_fd, pckt, len, hdr);
     }
+    if (sock_fd < 0) {
+        dbg_printf("\033[31m[TCP_handler ERROR]\033[0m No such fd!\n");
+        return -1;
+    }
+    sock_handler(sock_fd, pckt, len, hdr);
     return 0;
 }
 
@@ -182,12 +193,16 @@ int sock_handler(fd_t sock_fd, IP::packet& pckt, int len, tcphdr& hdr)
         handle_SYN_ACK_recv(sock_fd, pckt, hdr);
     } else if (check_ACK(hdr)) {
         if (status == DFA::SYN_RCVD) {
-            // change status to established
             // fill another_sock
-            // inform function connect ready to read and write
+            BIND::bind_list.find(sock_fd)->second.another_addr.sin_addr.s_addr = pckt.header.ip_src.s_addr;
+            BIND::bind_list.find(sock_fd)->second.another_addr.sin_port = hdr.th_sport;
+            //change status to estab
+            DFA::change_status(sock_fd, DFA::ESTAB);
         } else {
             // not implemented
         }
+    } else {
+        //not implemented
     }
     return 0;
 }
