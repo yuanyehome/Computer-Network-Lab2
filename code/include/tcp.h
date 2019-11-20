@@ -5,6 +5,8 @@
 // 每一个socket要存哪些东西？
 // seq_num超过了最大seq怎么办？
 
+extern std::condition_variable cv;
+extern std::mutex ack_mutex;
 struct TCB {
     fd_t conn_fd;
     ip_addr another_ip;
@@ -35,10 +37,15 @@ struct sock_msg {
     int another_seq_init;
     int present_seq;
     int another_present_seq;
+    int last_len;
+    bool wait_for_ack;
     sock_msg()
         : another_seq_init(-1)
+        , last_len(0)
+        , wait_for_ack(0)
     {
         my_seq_init = rand() % 65536;
+        present_seq = my_seq_init + 1;
     };
 };
 namespace BIND {
@@ -116,6 +123,7 @@ int sock_handler(fd_t sock_fd, IP::packet& pckt, int len, tcphdr& hdr);
 
 void handle_SYN_RECV(TCB& task, sockaddr_in* mgr);
 void handle_SYN_ACK_recv(fd_t sock_fd, IP::packet& pckt, tcphdr& in_hdr);
+int sendWrite(fd_t fildes, size_t nbyte, const void* buf, const std::string& type);
 
 void change_tcphdr_to_host(tcphdr& hdr);
 

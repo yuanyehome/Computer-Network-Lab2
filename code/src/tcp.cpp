@@ -3,7 +3,11 @@
 namespace DFA {
 std::map<fd_t, dfa_status> status_list;
 }
+
+std::condition_variable cv;
+std::mutex ack_mutex;
 namespace BIND {
+std::mutex msg_mutex;
 std::map<fd_t, sock_msg> bind_list;
 fd_t findFdBySock(sockaddr_in sock, sockaddr_in another_sock)
 {
@@ -20,6 +24,9 @@ fd_t findFdBySock(sockaddr_in sock, sockaddr_in another_sock)
 namespace LISTEN_LIST {
 std::mutex change_mutex;
 std::vector<listen_mgr> listen_list_mgr;
+}
+namespace WAITING_MSG {
+std::mutex waiting_for_ack;
 }
 
 in_port_t get_port(IP::packet& pckt)
@@ -44,6 +51,8 @@ bool check_ACK(tcphdr& hdr)
 void handle_SYN_RECV(TCB& task, sockaddr_in* mgr)
 {
     tcphdr hdr;
+    BIND::bind_list.find(task.conn_fd)->second.another_seq_init = task.hdr.th_seq;
+    BIND::bind_list.find(task.conn_fd)->second.another_present_seq = task.hdr.th_seq + 1;
     hdr.syn = 1;
     hdr.ack = 1;
     hdr.th_seq = BIND::bind_list.find(task.conn_fd)->second.my_seq_init;
@@ -68,7 +77,7 @@ void handle_SYN_ACK_recv(fd_t sock_fd, IP::packet& pckt, tcphdr& in_hdr)
     // send ACK
     tcphdr hdr;
     hdr.ack = 1;
-    hdr.th_seq = BIND::bind_list.find(sock_fd)->second.my_seq_init;
+    hdr.th_seq = in_hdr.th_ack;
     hdr.th_ack = in_hdr.th_seq + 1;
     hdr.th_dport = in_hdr.th_sport;
     hdr.th_sport = in_hdr.th_dport;
@@ -94,6 +103,25 @@ void sendSYN(int fd, sockaddr_in end_point, const sockaddr* dst_addr)
     hdr.check = 0;
     hdr.check = getChecksum(&hdr, 20);
     sendIPPacket(manager, end_point.sin_addr, ((sockaddr_in*)dst_addr)->sin_addr, IPPROTO_TCP, &hdr, sizeof(hdr));
+}
+
+int sendWrite(fd_t fildes, size_t nbyte, const void* buf, const std::string& type)
+{
+    tcphdr hdr;
+    u_char packet[sizeof(hdr) + nbyte];
+    auto& msg = BIND::bind_list.find(fildes)->second;
+    msg.last_len = nbyte;
+    hdr.th_seq = msg.present_seq;
+    hdr.th_ack = msg.another_present_seq;
+    hdr.th_sport = msg.addr.sin_port;
+    hdr.th_dport = msg.another_addr.sin_port;
+    hdr.th_win = 65535;
+    change_tcphdr_to_net(hdr);
+    hdr.th_sum = 0;
+    hdr.th_sum = getChecksum(&hdr, sizeof(hdr));
+    memcpy(packet, &hdr, sizeof(hdr));
+    memcpy(packet + sizeof(hdr), buf, nbyte);
+    return 0;
 }
 
 void change_tcphdr_to_host(tcphdr& hdr)
@@ -189,17 +217,25 @@ int TCP_handler(IP::packet& pckt, int len)
 int sock_handler(fd_t sock_fd, IP::packet& pckt, int len, tcphdr& hdr)
 {
     DFA::dfa_status status = DFA::status_list.find(sock_fd)->second;
+    std::lock_guard<std::mutex> lk(ack_mutex);
     if (check_SYN_ACK(hdr)) {
         handle_SYN_ACK_recv(sock_fd, pckt, hdr);
+        cv.notify_all();
     } else if (check_ACK(hdr)) {
         if (status == DFA::SYN_RCVD) {
+            cv.notify_all();
             // fill another_sock
             BIND::bind_list.find(sock_fd)->second.another_addr.sin_addr.s_addr = pckt.header.ip_src.s_addr;
             BIND::bind_list.find(sock_fd)->second.another_addr.sin_port = hdr.th_sport;
             //change status to estab
             DFA::change_status(sock_fd, DFA::ESTAB);
         } else {
-            // not implemented
+            if (hdr.th_ack != BIND::bind_list.find(sock_fd)->second.present_seq + BIND::bind_list.find(sock_fd)->second.last_len) {
+                dbg_printf("\033[31m[sock_handler ERROR]\033[0m Incorrect ACK!\n");
+                return -1;
+            }
+            BIND::bind_list.find(sock_fd)->second.present_seq += BIND::bind_list.find(sock_fd)->second.last_len;
+            cv.notify_all();
         }
     } else {
         //not implemented
@@ -332,6 +368,15 @@ int __wrap_accept(int socket, struct sockaddr* address,
                     handle_SYN_RECV(task, item.sock);
                     item.listen_list.erase(item.listen_list.begin());
                     LISTEN_LIST::change_mutex.unlock();
+                    std::unique_lock<std::mutex> lk(ack_mutex);
+                    while (1) {
+                        if (cv.wait_for(lk, 1s, [&] { return DFA::status_list.find(task.conn_fd)->second == DFA::ESTAB; })) {
+                            dbg_printf("\033[32m[ACCEPT INFO]\033[0m ACCEPT complete!\n");
+                            handle_SYN_RECV(task, item.sock);
+                        } else {
+                            continue;
+                        }
+                    }
                     if (address != NULL) {
                         memcpy(address, &BIND::bind_list[task.conn_fd].addr, sizeof(sockaddr_in));
                         *address_len = sizeof(sockaddr_in);
@@ -391,13 +436,50 @@ int __wrap_connect(int socket, const struct sockaddr* address,
     }
     sendSYN(socket, end_point, address);
     DFA::change_status(socket, DFA::SYN_SENT);
+    std::unique_lock<std::mutex> lk(ack_mutex);
     while (1) {
-        if (DFA::status_list.find(socket)->second == DFA::ESTAB) {
-            dbg_printf("\033[32m[ACCEPT INFO]\033[0m Accept complete!\n");
+        if (cv.wait_for(lk, 1s, [&] { return DFA::status_list.find(socket)->second == DFA::ESTAB; })) {
+            dbg_printf("\033[32m[CONNECT INFO]\033[0m CONNECT complete!\n");
             break;
+        } else {
+            continue;
         }
     }
     return 0;
+}
+
+ssize_t __wrap_write(int fildes, const void* buf, size_t nbyte)
+{
+    int retrans = 0;
+    if (BIND::bind_list.find(fildes) == BIND::bind_list.end()) {
+        dbg_printf("\033[31m[WRITE ERROR]\033[0m Please use an active socket!\n");
+        return 0;
+    }
+    if (DFA::status_list.find(fildes)->second != DFA::ESTAB) {
+        dbg_printf("\033[31m[WRITE ERROR]\033[0m Please use an active socket!\n");
+        return 0;
+    }
+    auto& msg = BIND::bind_list.find(fildes)->second;
+    sendWrite(fildes, nbyte, buf, "First");
+    msg.wait_for_ack = 1;
+    std::unique_lock<std::mutex> lk(ack_mutex);
+    while (1) {
+        if (cv.wait_for(lk, 5s, [&] { return !msg.wait_for_ack; })) {
+            dbg_printf("\033[32m[WRITE COMPLETE]\033[0m]\n");
+            break;
+        } else {
+            sendWrite(fildes, nbyte, buf, "Retrans");
+            retrans += 1;
+            dbg_printf("\033[32m[WRITE INFO]\033[0m Retransmission time %d\n", retrans);
+            if (retrans >= retrans_num) {
+                lk.unlock();
+                dbg_printf("\033[31m[WRITE ERROR]\033[0m] retransmission failed\n");
+                return 0;
+            }
+            continue;
+        }
+    }
+    return nbyte;
 }
 
 int __wrap_getaddrinfo(const char* node, const char* service,

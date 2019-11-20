@@ -12,6 +12,9 @@
 #ifdef __APPLE__
 #include <net/if_dl.h>
 #endif
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
@@ -33,6 +36,7 @@
 #define ROUTE_INTERVAL 2
 #define EMPTY 0
 #define OCCUPIED 1
+#define retrans_num 5
 
 #define DEBUG
 #ifdef DEBUG
@@ -47,3 +51,4 @@ typedef int dev_ID;
 typedef int (*frameReceiveCallback)(const void*, int);
 typedef int distance;
 typedef int fd_t;
+using namespace std::chrono_literals;
