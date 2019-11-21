@@ -5,7 +5,11 @@ std::map<fd_t, dfa_status> status_list;
 }
 
 std::condition_variable cv;
+std::condition_variable cv_read;
+std::condition_variable cv_close;
 std::mutex ack_mutex;
+std::mutex read_mutex;
+std::mutex fin_mutex;
 namespace BIND {
 std::mutex msg_mutex;
 std::map<fd_t, sock_msg> bind_list;
@@ -46,6 +50,10 @@ bool check_SYN_ACK(tcphdr& hdr)
 bool check_ACK(tcphdr& hdr)
 {
     return hdr.ack;
+}
+bool check_FIN(tcphdr& hdr)
+{
+    return hdr.fin;
 }
 
 void handle_SYN_RECV(TCB& task, sockaddr_in* mgr)
@@ -104,6 +112,37 @@ void sendSYN(int fd, sockaddr_in end_point, const sockaddr* dst_addr)
     hdr.check = getChecksum(&hdr, 20);
     sendIPPacket(manager, end_point.sin_addr, ((sockaddr_in*)dst_addr)->sin_addr, IPPROTO_TCP, &hdr, sizeof(hdr));
 }
+void send_FIN(fd_t fd)
+{
+    auto msg = BIND::bind_list.find(fd)->second;
+    tcphdr hdr;
+    hdr.fin = 1;
+    hdr.th_seq = msg.present_seq;
+    hdr.th_ack = msg.another_present_seq;
+    hdr.th_sport = msg.addr.sin_port;
+    hdr.th_dport = msg.another_addr.sin_port;
+    hdr.th_win = 65535;
+    hdr.check = 0;
+    change_tcphdr_to_net(hdr);
+    hdr.check = getChecksum(&hdr, sizeof(hdr));
+    sendIPPacket(manager, msg.addr.sin_addr, msg.another_addr.sin_addr, IPPROTO_TCP, &hdr, sizeof(hdr));
+}
+void send_FINACK(fd_t fd)
+{
+    auto msg = BIND::bind_list.find(fd)->second;
+    tcphdr hdr;
+    hdr.fin = 1;
+    hdr.ack = 1;
+    hdr.th_seq = msg.present_seq;
+    hdr.th_ack = msg.another_present_seq;
+    hdr.th_sport = msg.addr.sin_port;
+    hdr.th_dport = msg.another_addr.sin_port;
+    hdr.th_win = 65535;
+    hdr.check = 0;
+    change_tcphdr_to_net(hdr);
+    hdr.check = getChecksum(&hdr, sizeof(hdr));
+    sendIPPacket(manager, msg.addr.sin_addr, msg.another_addr.sin_addr, IPPROTO_TCP, &hdr, sizeof(hdr));
+}
 
 int sendWrite(fd_t fildes, size_t nbyte, const void* buf, const std::string& type)
 {
@@ -157,6 +196,7 @@ int DFA::change_status(fd_t fd, dfa_status status)
 
 int TCP_handler(IP::packet& pckt, int len)
 {
+    // len contains TCP hdr and content
     tcphdr hdr = *(tcphdr*)(pckt.payload);
     if (getChecksum(&hdr, sizeof(hdr)) != 0) {
         dbg_printf("\033[31m[TCP_handler ERROR] [getChecksum error]\033[0m\n");
@@ -216,31 +256,74 @@ int TCP_handler(IP::packet& pckt, int len)
 
 int sock_handler(fd_t sock_fd, IP::packet& pckt, int len, tcphdr& hdr)
 {
-    DFA::dfa_status status = DFA::status_list.find(sock_fd)->second;
-    std::lock_guard<std::mutex> lk(ack_mutex);
+    DFA::dfa_status& status = DFA::status_list.find(sock_fd)->second;
+    std::unique_lock<std::mutex> lk(ack_mutex);
     if (check_SYN_ACK(hdr)) {
         handle_SYN_ACK_recv(sock_fd, pckt, hdr);
+        lk.unlock();
         cv.notify_all();
+        return 0;
     } else if (check_ACK(hdr)) {
+        if (check_FIN(hdr)) {
+            // fin-ack
+            if (status == DFA::CLOSING) {
+                status = DFA::TIME_WAIT;
+                cv_close.notify_all();
+            } else if (status == DFA::FIN_WAIT_1) {
+                status = DFA::FIN_WAIT_2;
+                cv_close.notify_all();
+            } else if (status == DFA::LAST_ACK) {
+                cv_close.notify_all();
+            }
+        }
+        // fin-ack not implemented
         if (status == DFA::SYN_RCVD) {
-            cv.notify_all();
             // fill another_sock
             BIND::bind_list.find(sock_fd)->second.another_addr.sin_addr.s_addr = pckt.header.ip_src.s_addr;
             BIND::bind_list.find(sock_fd)->second.another_addr.sin_port = hdr.th_sport;
             //change status to estab
             DFA::change_status(sock_fd, DFA::ESTAB);
+            lk.unlock();
+            cv.notify_all();
+            return 0;
         } else {
             if (hdr.th_ack != BIND::bind_list.find(sock_fd)->second.present_seq + BIND::bind_list.find(sock_fd)->second.last_len) {
                 dbg_printf("\033[31m[sock_handler ERROR]\033[0m Incorrect ACK!\n");
                 return -1;
             }
             BIND::bind_list.find(sock_fd)->second.present_seq += BIND::bind_list.find(sock_fd)->second.last_len;
+            lk.unlock();
             cv.notify_all();
+            return 0;
         }
+    } else if (check_FIN(hdr)) {
+        BIND::bind_list.find(sock_fd)->second.another_present_seq += 1;
+        send_FINACK(sock_fd);
+        if (status == DFA::ESTAB) {
+            status = DFA::CLOSE_WAIT;
+        } else if (status == DFA::FIN_WAIT_2) {
+            status = DFA::TIME_WAIT;
+            lk.unlock();
+            cv_close.notify_all();
+        } else if (status == DFA::FIN_WAIT_1) {
+            status = DFA::CLOSING;
+            cv_close.notify_all();
+        }
+        return 0;
     } else {
-        //not implemented
+        if (status == DFA::ESTAB) {
+            std::unique_lock<std::mutex> lk(read_mutex);
+            u_char* content = (u_char*)pckt.payload + 20;
+            auto& msg = BIND::bind_list.find(sock_fd)->second;
+            for (int i = 0; i < len - 20; ++i) {
+                msg.buffer.push_back(content[i]);
+            }
+            lk.unlock();
+            cv_read.notify_all();
+            return 0;
+        }
     }
-    return 0;
+    return -1;
 }
 
 fd_t __wrap_socket(int domain, int type, int protocol)
@@ -482,6 +565,43 @@ ssize_t __wrap_write(int fildes, const void* buf, size_t nbyte)
     return nbyte;
 }
 
+ssize_t __wrap_read(int fildes, void* buf, size_t nbyte)
+{
+    if (BIND::bind_list.find(fildes) == BIND::bind_list.end()) {
+        dbg_printf("\033[31m[READ ERROR]\033[0m No such fd");
+        return 0;
+    }
+    auto& msg = BIND::bind_list.find(fildes)->second;
+    std::unique_lock<std::mutex> lk(read_mutex);
+    cv_read.wait(lk, [&] { return msg.buffer.size() >= nbyte; });
+    for (int _ = 0; _ < nbyte; ++_) {
+        ((u_char*)buf)[_] = msg.buffer[0];
+        msg.buffer.erase(msg.buffer.begin());
+    }
+    return nbyte;
+}
+
+int __wrap_close(int fildes)
+{
+    if (BIND::bind_list.find(fildes) == BIND::bind_list.end()) {
+        dbg_printf("\033[31m[CLOSE ERROR]\033[0m No such fd!\n");
+    }
+    send_FIN(fildes);
+    std::unique_lock<std::mutex> lk(fin_mutex);
+    for (int i = retrans_num; i >= 0; --i) {
+        if (cv_close.wait_for(lk, 1s, [&] { return DFA::status_list.find(fildes)->second == DFA::FIN_WAIT_2 || DFA::status_list.find(fildes)->second == DFA::CLOSING; })) {
+            break;
+        } else {
+            send_FIN(fildes);
+            continue;
+        }
+    }
+    cv_close.wait(lk, [&] { return DFA::status_list.find(fildes)->second == DFA::TIME_WAIT; });
+    std::this_thread::sleep_for(2s); // MSL
+    delete_all(fildes);
+    return 0;
+}
+
 int __wrap_getaddrinfo(const char* node, const char* service,
     const struct addrinfo* hints,
     struct addrinfo** res)
@@ -512,4 +632,26 @@ int __wrap__freeaddrinfo(addrinfo* ai)
         ai = next;
     }
     return 0;
+}
+
+void delete_all(fd_t fd)
+{
+    in_port_t end_point_port = BIND::bind_list.find(fd)->second.addr.sin_port;
+    in_addr end_point_ip = BIND::bind_list.find(fd)->second.addr.sin_addr;
+    Device* dev_ptr = manager.findDevice(end_point_ip);
+    dev_ptr->port_mutex.lock();
+    dev_ptr->empty_port[end_point_port] = 0;
+    dev_ptr->port_mutex.unlock();
+    BIND::bind_list.erase(BIND::bind_list.find(fd));
+    DFA::status_mutex.lock();
+    DFA::status_list.erase(DFA::status_list.find(fd));
+    DFA::status_mutex.unlock();
+    LISTEN_LIST::change_mutex.lock();
+    for (auto iter = LISTEN_LIST::listen_list_mgr.begin(); iter != LISTEN_LIST::listen_list_mgr.end(); ++iter) {
+        if (iter->mgr_fd == fd) {
+            LISTEN_LIST::listen_list_mgr.erase(iter);
+            break;
+        }
+    }
+    LISTEN_LIST::change_mutex.unlock();
 }

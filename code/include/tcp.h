@@ -5,8 +5,12 @@
 // 每一个socket要存哪些东西？
 // seq_num超过了最大seq怎么办？
 
-extern std::condition_variable cv;
 extern std::mutex ack_mutex;
+extern std::mutex read_mutex;
+extern std::mutex fin_mutex;
+extern std::condition_variable cv;
+extern std::condition_variable cv_close;
+extern std::condition_variable cv_read;
 struct TCB {
     fd_t conn_fd;
     ip_addr another_ip;
@@ -39,6 +43,7 @@ struct sock_msg {
     int another_present_seq;
     int last_len;
     bool wait_for_ack;
+    std::vector<u_char> buffer;
     sock_msg()
         : another_seq_init(-1)
         , last_len(0)
@@ -123,6 +128,7 @@ int sock_handler(fd_t sock_fd, IP::packet& pckt, int len, tcphdr& hdr);
 
 void handle_SYN_RECV(TCB& task, sockaddr_in* mgr);
 void handle_SYN_ACK_recv(fd_t sock_fd, IP::packet& pckt, tcphdr& in_hdr);
+void handle_CLOSE_WAIT(fd_t sock_fd);
 int sendWrite(fd_t fildes, size_t nbyte, const void* buf, const std::string& type);
 
 void change_tcphdr_to_host(tcphdr& hdr);
@@ -132,6 +138,12 @@ void change_tcphdr_to_net(tcphdr& hdr);
 bool check_SYN(tcphdr& hdr);
 bool check_SYN_ACK(tcphdr& hdr);
 bool check_ACK(tcphdr& hdr);
+bool check_FIN(tcphdr& hdr);
+
+void send_FIN(fd_t fd);
+void send_FINACK(fd_t fd);
+
+void delete_all(fd_t fd);
 
 //
 
