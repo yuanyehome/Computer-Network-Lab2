@@ -6,4 +6,3 @@
 **/*.o
 .DS_Store
 code/build/*
-report.md
