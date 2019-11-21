@@ -1,3 +1,5 @@
+#ifndef DEBUG_H
+#define DEBUG_H
 #include <arpa/inet.h>
 #include <assert.h>
 #include <cstdio>
@@ -15,6 +17,7 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
@@ -52,3 +55,6 @@ typedef int (*frameReceiveCallback)(const void*, int);
 typedef int distance;
 typedef int fd_t;
 using namespace std::chrono_literals;
+const int MY_FD_MIN = 798515;
+const int MY_FD_MAX = INT_MAX;
+#endif

@@ -44,11 +44,15 @@ struct sock_msg {
     int last_len;
     bool wait_for_ack;
     std::vector<u_char> buffer;
+    bool is_listening;
     sock_msg()
         : another_seq_init(-1)
         , last_len(0)
         , wait_for_ack(0)
+        , is_listening(0)
     {
+        addr.sin_addr.s_addr = 0;
+        addr.sin_port = 0;
         my_seq_init = rand() % 65536;
         present_seq = my_seq_init + 1;
     };
@@ -142,6 +146,7 @@ bool check_FIN(tcphdr& hdr);
 
 void send_FIN(fd_t fd);
 void send_FINACK(fd_t fd);
+void send_ACK(fd_t fd);
 
 void delete_all(fd_t fd);
 

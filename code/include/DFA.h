@@ -17,7 +17,7 @@ enum dfa_status {
     CLOSING,
     TIME_WAIT
 };
-std::mutex status_mutex;
+extern std::mutex status_mutex;
 extern std::map<fd_t, dfa_status> status_list;
 int change_status(fd_t fd, dfa_status status);
 }

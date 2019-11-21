@@ -4,6 +4,7 @@
 #include "device.h"
 
 uint16_t getChecksum(const void* vdata, size_t length);
+std::string IPtoStr(ip_addr IP);
 namespace IP {
 extern IPPacketReceiveCallback IPCallback;
 void startBroadcast(const DeviceManager& dev_mgr);
