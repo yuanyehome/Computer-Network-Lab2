@@ -66,6 +66,7 @@ bool check_FIN(tcphdr& hdr)
 void handle_SYN_RECV(TCB& task, sockaddr_in* mgr)
 {
     tcphdr hdr;
+    memset(&hdr, 0, sizeof(hdr));
     BIND::bind_list.find(task.conn_fd)->second.another_seq_init = task.hdr.th_seq;
     BIND::bind_list.find(task.conn_fd)->second.another_present_seq = task.hdr.th_seq + 1;
     hdr.syn = 1;
@@ -92,7 +93,7 @@ void handle_SYN_ACK_recv(fd_t sock_fd, IP::packet& pckt, tcphdr& in_hdr)
     }
     // send ACK
     tcphdr hdr;
-    hdr.syn = 0;
+    memset(&hdr, 0, sizeof(hdr));
     hdr.ack = 1;
     hdr.th_seq = in_hdr.th_ack;
     hdr.th_ack = in_hdr.th_seq + 1;
@@ -111,6 +112,7 @@ void handle_SYN_ACK_recv(fd_t sock_fd, IP::packet& pckt, tcphdr& in_hdr)
 void sendSYN(int fd, sockaddr_in end_point, const sockaddr* dst_addr)
 {
     tcphdr hdr;
+    memset(&hdr, 0, sizeof(hdr));
     hdr.syn = 1;
     hdr.th_seq = BIND::bind_list.find(fd)->second.my_seq_init;
     hdr.th_sport = end_point.sin_port;
@@ -125,6 +127,7 @@ void send_ACK(fd_t fd)
 {
     auto msg = BIND::bind_list.find(fd)->second;
     tcphdr hdr;
+    memset(&hdr, 0, sizeof(hdr));
     hdr.ack = 1;
     hdr.th_seq = msg.present_seq;
     hdr.th_ack = msg.another_present_seq;
@@ -140,6 +143,7 @@ void send_FIN(fd_t fd)
 {
     auto msg = BIND::bind_list.find(fd)->second;
     tcphdr hdr;
+    memset(&hdr, 0, sizeof(hdr));
     hdr.fin = 1;
     hdr.th_seq = msg.present_seq;
     hdr.th_ack = msg.another_present_seq;
@@ -155,6 +159,7 @@ void send_FINACK(fd_t fd)
 {
     auto msg = BIND::bind_list.find(fd)->second;
     tcphdr hdr;
+    memset(&hdr, 0, sizeof(hdr));
     hdr.fin = 1;
     hdr.ack = 1;
     hdr.th_seq = msg.present_seq;
@@ -171,6 +176,7 @@ void send_FINACK(fd_t fd)
 int sendWrite(fd_t fildes, size_t nbyte, const void* buf, const std::string& type)
 {
     tcphdr hdr;
+    memset(&hdr, 0, sizeof(hdr));
     u_char packet[sizeof(hdr) + nbyte];
     auto& msg = BIND::bind_list.find(fildes)->second;
     msg.last_len = nbyte;
